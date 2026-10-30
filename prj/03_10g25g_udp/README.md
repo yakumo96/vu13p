@@ -1,4 +1,4 @@
-# 致敬Alex ! 
+# Alex に敬意を！ 
 
 ## Introduction
 

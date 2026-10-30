@@ -1,82 +1,83 @@
 
-# 关于 Tandem PCIe
+# Tandem PCIe について
 
-PCI Express® 属于即插即用协议，即上电时，PCIe® 主机将枚举系统。在此流程中，主机将从每个器件读取请求的地址 大小，然后向器件分配基址。因此，当主机查询 PCIe 接口时，这些接口必须处于就绪状态，否则不会为其分配基址。 PCI Express 规范声明，当系统电源正常的 100 ms 后，PERST# 必须断言无效，并且在 PERST# 断言无效后的 20 ms 内 PCI Express 端口必须准备好进行链路训练。这通常被称为 100 ms 启动时间要求。
+PCI Express® はプラグアンドプレイのプロトコルです。つまり電源投入時に PCIe® ホストがシステムをエニュメレーションします。この過程でホストは各デバイスから要求されるアドレスサイズを読み取り、デバイスにベースアドレスを割り当てます。したがって、ホストが PCIe インターフェースを問い合わせる時点で、それらのインターフェースは準備完了状態でなければならず、そうでなければベースアドレスが割り当てられません。PCI Express 仕様では、システム電源が安定してから 100 ms 後に PERST# がデアサートされ、PERST# のデアサート後 20 ms 以内に PCI Express ポートがリンクトレーニングの準備を完了していなければならないと規定されています。これは一般に 100 ms 起動時間要件と呼ばれます。
 
-“Tandem Configuration”(串联配置)使用 2 阶方法以支持 IP 满足 PCI Express 规范中所述的配置时间要求。此技术 支持多种用例，如下所述:
+「Tandem Configuration」（タンデムコンフィギュレーション）は 2 段階の方式を用いて、IP が PCI Express 仕様に記載されたコンフィギュレーション時間要件を満たせるようにします。この技術は以下のような複数のユースケースをサポートします:
 
-* “Tandem PROM”(串联 PROM):从闪存加载单一 2 阶比特流。
-* “TandemPCIe”(串联PCIe):从闪存加载第一阶段比特流，并通过PCIe链路将第二阶段比特流交付至 MCAP。
-* “Tandem PCIe with Field Updates”(含现场更新的串联 PCIe):完成串联 PCIe 初始配置后，在 PCIe 链路保持
-有效时更新整个用户设计。更新区域(布局图)和设计结构均已预定义，并且已提供 Tcl 脚本。
+* 「Tandem PROM」（タンデム PROM）: フラッシュから 2 段階の単一ビットストリームをロードする。
+* 「Tandem PCIe」（タンデム PCIe）: フラッシュから第 1 段階のビットストリームをロードし、第 2 段階のビットストリームは PCIe リンク経由で MCAP に渡す。
+* 「Tandem PCIe with Field Updates」（フィールドアップデート対応タンデム PCIe）: タンデム PCIe の初期コンフィギュレーション完了後、PCIe リンクを
+維持したままユーザーデザイン全体を更新する。更新領域（フロアプラン）とデザイン構造はあらかじめ定義されており、Tcl スクリプトも提供されている。
 
-* 串联 Dynamic Function eXchange:这是较常用的用例，针对任意大小或任意数量的动态区域采用串联配置后接
-Dynamic Function eXchange (DFX)。
-* “DFX over PCIe”(基于 PCIe 的 DFX):这是标准配置，后接 DFX，使用 PCIe / MCAP 作为部分比特流的交付
+* タンデム Dynamic Function eXchange: 比較的よく使われるユースケースで、任意のサイズ・任意の数の動的領域に対し、タンデムコンフィギュレーションの後に
+Dynamic Function eXchange (DFX) を行う。
+* 「DFX over PCIe」（PCIe ベースの DFX）: 標準コンフィギュレーションの後に DFX を行い、部分ビットストリームの転送に PCIe / MCAP を使用する。
 
-根据特定用例，更改“Tandem Configuration or Dynamic Function eXchange”(串联配置或 Dynamic Function
-eXchange)选项:
-* “Tandem PROM”适用于串联 PROM 用例。
-* “Tandem PCIe”适用于串联 PCIe 或串联和 Dynamic Function eXchange 用例。
-* “Tandem PCIe with Field Updates”则仅适用于预定义的“Field Updates”用例。
-* “DFX over PCIe”用于为 DFX 启用 MCAP 链路，而无需启用“Tandem Configuration”。
+ユースケースに応じて「Tandem Configuration or Dynamic Function eXchange」（タンデムコンフィギュレーションまたは Dynamic Function
+eXchange）オプションを変更します:
+* 「Tandem PROM」はタンデム PROM のユースケースに使用する。
+* 「Tandem PCIe」はタンデム PCIe、またはタンデムと Dynamic Function eXchange を組み合わせるユースケースに使用する。
+* 「Tandem PCIe with Field Updates」は、あらかじめ定義された「Field Updates」ユースケース専用である。
+* 「DFX over PCIe」は、「Tandem Configuration」を有効にせずに DFX 用の MCAP リンクを有効にするために使用する。
 
 
 ## 1 原理
 
-Tandem PCIe 将传统的单一bit流分割成2个部分。第一部分仅仅包含必要的pcie相关逻辑(Stage 1)，第二部分包含用户App相关逻辑(Stage 2)
+Tandem PCIe は従来の単一ビットストリームを 2 つの部分に分割します。第 1 部分には必要最小限の PCIe 関連ロジックのみ（Stage 1）、第 2 部分にはユーザーアプリ関連のロジック（Stage 2）が含まれます。
 
 
-如下图所示：
+下図のとおりです：
 
 ![](./images/tandem_pcie.png)
 
 
-对于FPGA服务来说，出厂即会设定好Stage 1相关内容并把该部分逻辑硬化成dcp文件，二次开发用户调用pcie模块，再通过mcap程序下载即可
+FPGA サービスとしては、出荷時に Stage 1 の内容を設定済みにして、そのロジックを dcp ファイルとして固定化しておきます。二次開発のユーザーは pcie モジュールを呼び出し、mcap プログラムでダウンロードするだけで済みます。
 
-###1.  编译后,固化tandem1
+###1.  ビルド後、tandem1 を固定化する
 
 ```shell
-make #编译
+make #ビルド
 ```
 
 
-编译后即可生成 2个 bit文件：
+ビルドすると 2 つの bit ファイルが生成されます：
 
 ![](./images/tandem_find_two_tandem.png)
 
 
 
-生成bin 文件后通过 jtag 将bin文件下载至flash中 (02g_x1_x2_x4)
+bin ファイルを生成した後、JTAG で bin ファイルを flash に書き込みます (02g_x1_x2_x4)
 
 
 ```shell
 vu13p-fw -w xxxxxxxxxx_tandem1.bit
-#如果main_stage的内容不变，则此步骤只需要执行一次
+#main_stage の内容が変わらなければ、この手順は 1 回だけ実行すれば良い
 ```
 
-下载完成后请对pcie板卡进行冷重启。
+書き込み完了後、PCIe ボードをコールドリブートしてください。
 
-####  下载 tandem2.bit
+####  tandem2.bit のダウンロード
 
-本文档仅验证过linux5.15 on Ubuntu20环境; 首先安装依赖
+本ドキュメントは Ubuntu20 上の linux5.15 環境でのみ検証済みです。まず依存パッケージをインストールします
 
 ```shell
-# 1. 依赖
+# 1. 依存パッケージ
 sudo apt install zlib1g
-# 2. 安装 pcieutils
+# 2. pcieutils のインストール
 cd driver/driver/an64761/pcieutils
 cat get_pcieutils.sh
 source get_pcieutils.sh
-# 3. 安装mcap
+# 3. mcap のインストール
 cd ../Linux
 cat compile.sh
 source compile.sh
 ./mcap -h
 ```
 
-安装OK后查看：
+インストールできたら確認します：
 ![](./images/tandem_linux_test.png)
+
 
 
 

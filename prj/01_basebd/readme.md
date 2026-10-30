@@ -1,26 +1,26 @@
 
 ## basebd
 
-这里提供一个基础的 bd文件用于提供给用户二次开发。
+ここでは、ユーザーが二次開発に使える基本的な bd ファイルを提供します。
 
 
-## 编译 
+## ビルド 
 
-使用 `make` 编译工程，编译结束后 使用`make genmcs` 生成 mcs固件
-
-
-## 烧录
-
-第一次使用jtag 将 mcs固件 写入 QSPI Flash ,后续就可以不使用jtag了
-
-## 启动
-
-烧录OK后重启操作系统
-
-## 测试
+`make` でプロジェクトをビルドし、ビルド完了後に `make genmcs` で mcs ファームウェアを生成します
 
 
+## 書き込み
 
-1. 测试 bram :  `cd driver/test_bram`
-2. 测试 LED  :  `cd driver/test_led/`
-3. 测试 XVC  :  DDDD 
+初回は JTAG で mcs ファームウェアを QSPI Flash に書き込みます。以降は JTAG を使わなくても構いません
+
+## 起動
+
+書き込みが完了したら OS を再起動します
+
+## テスト
+
+
+
+1. bram のテスト :  `cd driver/test_bram`
+2. LED のテスト  :  `cd driver/test_led/`
+3. XVC のテスト  :  DDDD 

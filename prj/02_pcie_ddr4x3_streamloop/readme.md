@@ -1,13 +1,13 @@
 
-# 使用
+# 使い方
 
-##  通过 pciutils 安装好 mcap 工具
+##  pciutils を使って mcap ツールをインストール
   * `cd driver/an64761/pcieutils`
   * `./get_pciutils.sh`
   * `cd driver/an64761/Linux`
-  * `./compile.sh` 获得 mcap工具
+  * `./compile.sh` で mcap ツールを取得
 
-## 使用mcap 烧写程序
+## mcap でプログラムを書き込む
 
 ```
 ➜  Linux git:(main) ✗ lspci | grep Xilinx
@@ -19,7 +19,7 @@ Xilinx MCAP device found
 FPGA Configuration Done!!
 ```
 
-## 安装驱动
+## ドライバのインストール
 
 ```
 cd dma_ip_drivers/XDMA/linux-kernel/XDMA
@@ -30,9 +30,9 @@ sudo ./load_driver.sh
 ```
 
 
-## 测试
+## テスト
 
-### 测试DDR速度
+### DDR 速度テスト
 
 ```
 cd driver/ddr4test/ 
@@ -55,13 +55,15 @@ make
 正在比对0x2c0000000 ~ 0x300000000中的内容, 比对完成
 ```
 
-### ila 测试
+※ 上記はテストプログラムの実際の出力（中国語メッセージ）をそのまま掲載しています。意味はそれぞれ「16GB メモリへの書き込み速度: … GB/s」「16GB メモリからの読み出し速度: … GB/s」「0x… ~ 0x… の内容を比較中、比較完了」です。
+
+### ila テスト
 
 ```
-#初始化 xvc服务
+#xvc サービスを初期化
 sudo xvc_pcie -s TCP::10200 -d /dev/xdma0_xvc &
 ```
-即可在vivdao中使用xvc, 
+これで Vivado から XVC を使えるようになります。 
 
 
 ![](../01_basebd/docs/images/opentarget.png)
@@ -70,9 +72,9 @@ sudo xvc_pcie -s TCP::10200 -d /dev/xdma0_xvc &
 
 ![](../01_basebd/docs/images/opentarget_3.png)
 
-* 需要加载 probes file 才会有ila的波形显示。
+* ILA の波形を表示するには probes file を読み込む必要があります。
 
-* 一些额外的notes: 如果你把AXI bridge 挂在的AXIL地址不是0x4_0000，而是0x2_0000, 则需要重新编译/安装驱动并重启xdma.ko。 
+* 補足 notes: AXI bridge を接続した AXIL アドレスが 0x4_0000 ではなく 0x2_0000 の場合は、ドライバを再ビルド／再インストールし、xdma.ko を再ロードする必要があります。 
 
 ```shell
 cd dma_ip_drivers/XDMA/linux-kernel/xdma/
@@ -80,6 +82,6 @@ sudo make xvc_bar_offset=0x20000
 sudo make install 
 ```
 
-### DMA 环回测试
+### DMA ループバックテスト
 
 

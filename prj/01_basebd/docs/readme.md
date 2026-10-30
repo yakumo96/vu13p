@@ -1,26 +1,26 @@
 
-## Step 1  编译FPGA
+## Step 1  FPGA のビルド
 
-3个FPGA工程一起编译（自己CPU不够强的话可以分开编译，不带 ```-j4``` 参数即可）
+3 つの FPGA プロジェクトをまとめてビルドします（CPU が非力な場合は、```-j4``` オプションを付けずに個別にビルドしても構いません）
 
 
 ```shell
 cd vu13p/prj/01_icap_led
 make -j4 tag=hello_masw
-# CPU 起飞
+# CPU フル回転
 ```
 
-编译结束后会在 `~/alivu13p/prjs/golden_images` 目录下生成三个工程的xpr文件。并且在当前目录下会出现3个bit文件
+ビルドが終わると、`~/alivu13p/prjs/golden_images` ディレクトリに 3 つのプロジェクトの xpr ファイルが生成され、カレントディレクトリには 3 つの bit ファイルが出力されます
 
 
-## Step 2  编译QSPI-FLASH驱动
+## Step 2  QSPI-FLASH ドライバのビルド
 
 ```shell
 cd vu13p/prj/01_icap_led/driver/alex_qspi
 make
 ```
 
-会在当前目录下生成一个 vu13p-fw 软件
+カレントディレクトリに vu13p-fw というプログラムが生成されます
 
 ```shell
 ➜  alex_qspi git:(main) ✗ ./vu13p-fw -h
@@ -35,57 +35,57 @@ usage: vu13p-fw [options]
  -y         no interactive confirm
 ```
 
-下载bit文件到FPGA
+bit ファイルを FPGA にダウンロード
 
 ```shell
-./vu13p-fw -w xxxxxxxx.bit -s 0 # 0代表是QSPI flash的第0个扇区
-./vu13p-fw -w xxxxxxxx.bit -s 1 # 1代表是QSPI flash的第1个扇区
+./vu13p-fw -w xxxxxxxx.bit -s 0 # 0 は QSPI flash のセクタ 0 を表す
+./vu13p-fw -w xxxxxxxx.bit -s 1 # 1 は QSPI flash のセクタ 1 を表す
 ```
 
 ![](./images/QQ20231205000804.png)
 
-## Step 3 实验验证
+## Step 3 動作検証
 
-总体结构
+全体構成
 
 ![](images/pcie_icap-Page-4.drawio.png)
 
 
-### 3.1 led 测试
+### 3.1 led テスト
 
 ```
 cd driver/test_led
 make 
-# 确认已经启动了 led 的 fpga固件
+# led 用の FPGA ファームウェアが起動していることを確認
 ./led
-# 可以看到 led 闪烁
+# led の点滅が確認できる
 ```
 
 
-### 3.2 bram 测试
+### 3.2 bram テスト
 
 
 ```
 cd driver/test_bram
 make 
-# 确认已经启动了 bram 的fpga 固件
+# bram 用の FPGA ファームウェアが起動していることを確認
 ./bram
 ```
 
 
-### 3.3 XVC 测试
+### 3.3 XVC テスト
 
 
-工程example3中，配置了 AXI debug bridge 的地址为  `0x2_0000` , 这个地址与xdma的驱动 /dev/xdma0_xvc的默认地址`0x4_0000`并不一致
+プロジェクト example3 では、AXI debug bridge のアドレスを `0x2_0000` に設定しています。このアドレスは xdma ドライバ /dev/xdma0_xvc のデフォルトアドレス `0x4_0000` とは一致しません
 
-上位机安装xdma驱动后，会自带 /dev/xdma0_xvc , 另外vivado的路径里会带有一个 xvc_pcie, 如果已经将vivado的路径添加到了PATH中，则可以任意路径下执行 
+ホスト PC に xdma ドライバをインストールすると /dev/xdma0_xvc が作成されます。また、Vivado のインストールパスには xvc_pcie が含まれているので、Vivado のパスを PATH に追加済みであれば、任意のディレクトリで次を実行できます 
 
 ```shell
-#初始化 xvc服务
+#xvc サービスを初期化
 xvc_pcie -s TCP::10200 -d /dev/xdma0_xvc &
 ```
 
-即可在vivdao中使用xvc, 
+これで Vivado から XVC を使えるようになります。 
 
 
 ![](./images/opentarget.png)
@@ -94,9 +94,9 @@ xvc_pcie -s TCP::10200 -d /dev/xdma0_xvc &
 
 ![](./images/opentarget_3.png)
 
-* 需要加载 probes file 才会有ila的波形显示。
+* ILA の波形を表示するには probes file を読み込む必要があります。
 
-* 一些额外的notes: 如果你把AXI bridge 挂在的AXIL地址不是0x4_0000，而是0x2_0000, 则需要重新编译/安装驱动并重启xdma.ko。 
+* 補足 notes: AXI bridge を接続した AXIL アドレスが 0x4_0000 ではなく 0x2_0000 の場合は、ドライバを再ビルド／再インストールし、xdma.ko を再ロードする必要があります。 
 
 ```shell
 cd dma_ip_drivers/XDMA/linux-kernel/xdma/
