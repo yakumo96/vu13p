@@ -103,8 +103,8 @@ wire       qsfp_int_l             ;
 
 //================================================================================================
 wire [1:0] user_led_g;
-wire       user_led_r;//log by masw@masw.tech: fpga_core.v 内部悬空了，没有意义assign user_led_r = 1'b1;
-wire [1:0] front_led ;//log by masw@masw.tech: fpga_core.v 内部悬空了，没有意义assign front_led = 2'b00;
+wire       user_led_r;//log by masw@masw.tech: fpga_core.v 内部で未接続（フローティング）なので意味がない assign user_led_r = 1'b1;
+wire [1:0] front_led ;//log by masw@masw.tech: fpga_core.v 内部で未接続（フローティング）なので意味がない assign front_led = 2'b00;
 
 assign qsfp_led_g = user_led_g;
 assign qsfp_led_y = front_led ;

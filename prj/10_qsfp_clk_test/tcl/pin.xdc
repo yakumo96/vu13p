@@ -2,8 +2,8 @@
 set_property -dict {PACKAGE_PIN AY23  IOSTANDARD  DIFF_SSTL12} [get_ports  ref_clk_100M_p ]
 set_property -dict {PACKAGE_PIN BA23  IOSTANDARD  DIFF_SSTL12} [get_ports  ref_clk_100M_n ]
 
-# 这里为了验证 bank 229/230/231/232/233 的gt管脚的时钟频率
-# 参考 UG575 P351
+# ここでは bank 229/230/231/232/233 の GT ピンのクロック周波数を検証する
+# UG575 P351 を参照
 set_property -dict {PACKAGE_PIN B11  IOSTANDARD  DIFF_SSTL12} [get_ports  bank233_B11_clk_p ]
 set_property -dict {PACKAGE_PIN B10  IOSTANDARD  DIFF_SSTL12} [get_ports  bank233_B10_clk_n ]
 set_property -dict {PACKAGE_PIN D11  IOSTANDARD  DIFF_SSTL12} [get_ports  bank233_D11_clk_p ]

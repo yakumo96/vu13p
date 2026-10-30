@@ -2,41 +2,41 @@ CC = gcc
 CFLAGS = -Wall -Wextra -O2 -g -fPIC
 LDFLAGS = -lpthread -ldl
 
-# 目标文件
+# ターゲットファイル
 LIB_TARGET = libaxidma_mm2s.so
 TEST_TARGET = play_test
 TEST_SO_TARGET = play_test_so
 
-# 源文件
+# ソースファイル
 LIB_SRCS = axidma_mm2s.c
 TEST_SRCS = play_test.c
 TEST_SO_SRCS = play_test_so.c
 
-# 目标规则
+# ターゲットルール
 all: $(LIB_TARGET) $(TEST_TARGET) $(TEST_SO_TARGET)
 
-# 编译动态库
+# 共有ライブラリをビルド
 $(LIB_TARGET): $(LIB_SRCS)
 	$(CC) $(CFLAGS) -shared -o $@ $^ $(LDFLAGS)
 
-# 编译测试程序（直接链接）
+# テストプログラムをビルド（直接リンク）
 $(TEST_TARGET): $(TEST_SRCS)
 	$(CC) $(CFLAGS) -o $@ $< -L. -laxidma_mm2s -Wl,-rpath,. $(LDFLAGS)
 
-# 编译测试程序（动态加载）
+# テストプログラムをビルド（動的ロード）
 $(TEST_SO_TARGET): $(TEST_SO_SRCS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-# 清理规则
+# クリーンルール
 clean:
 	rm -f $(LIB_TARGET) $(TEST_TARGET) $(TEST_SO_TARGET)
 
-# 安装规则
+# インストールルール
 install: $(LIB_TARGET)
 	install -m 755 $(LIB_TARGET) /usr/local/lib/
 	ldconfig
 
-# 运行规则
+# 実行ルール
 run: $(TEST_TARGET)
 	./$(TEST_TARGET)
 

@@ -1,8 +1,8 @@
 //========================================================================
 //        author   : masw
 //        email    : masw@masw.tech     
-//        NOTES    : 基于Alex的工作，版权归Alex所有
-//        creattime: 2023年11月11日 星期六 21时06分30秒
+//        NOTES    : Alex の成果をベースにしており、著作権は Alex に帰属する
+//        creattime: 2023年11月11日 土曜日 21時06分30秒
 //========================================================================
 
 `resetall
@@ -50,7 +50,7 @@ module udp64_sfp_top (
     input  wire       rst                             ,//i1, Synchronous reset
     output wire [1:0] user_led_g                      ,//o2, led
 
-    //Ethernet: SFP28 其中一个通道
+    //Ethernet: SFP28 のうち 1 チャネル
     input  wire        qsfp_0_tx_clk_0                ,
     input  wire        qsfp_0_tx_rst_0                ,
     output wire [63:0] qsfp_0_txd_0                   ,

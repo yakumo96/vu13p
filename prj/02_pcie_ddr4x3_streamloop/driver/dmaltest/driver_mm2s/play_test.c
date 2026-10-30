@@ -1,6 +1,6 @@
 /**
  * @file play_test.c
- * @brief AXI DMA MM2S驱动测试程序
+ * @brief AXI DMA MM2S ドライバのテストプログラム
  */
 
 #include <stdio.h>
@@ -12,10 +12,10 @@
 #include <stdint.h>
 #include "axidma_mm2s.h"
 
-// 全局变量用于信号处理
+// シグナル処理用のグローバル変数
 static axidma_mm2s_t *g_ctx = NULL;
 
-// 信号处理函数
+// シグナルハンドラ
 static void signal_handler(int sig)
 {
     if (g_ctx) {
@@ -25,7 +25,7 @@ static void signal_handler(int sig)
     exit(0);
 }
 
-// 设置终端为非规范模式，用于检测按键
+// キー入力検出のため端末を非カノニカルモードに設定
 static void setup_terminal(void)
 {
     struct termios new_termios;
@@ -34,7 +34,7 @@ static void setup_terminal(void)
     tcsetattr(STDIN_FILENO, TCSANOW, &new_termios);
 }
 
-// 恢复终端设置
+// 端末設定を復元
 static void restore_terminal(void)
 {
     struct termios new_termios;
@@ -53,11 +53,11 @@ int main(int argc, char *argv[])
     const char *filename = argv[1];
     bool is_cyclic = (argc == 3 && strcmp(argv[2], "cyclic") == 0);
     
-    // 注册信号处理函数
+    // シグナルハンドラを登録
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
     
-    // 设置终端为非规范模式
+    // 端末を非カノニカルモードに設定
     setup_terminal();
     
     printf("Initializing AXI DMA MM2S driver...\n");
@@ -79,16 +79,16 @@ int main(int argc, char *argv[])
     
     printf("DMA transfer started. Press any key to stop...\n");
     
-    // 等待DMA传输完成
+    // DMA 転送の完了を待つ
     axidma_mm2s_wait(g_ctx);
     
     printf("DMA transfer completed\n");
     
-    // 释放资源
+    // リソースを解放
     axidma_mm2s_free(g_ctx);
     g_ctx = NULL;
     
-    // 恢复终端设置
+    // 端末設定を復元
     restore_terminal();
     
     return 0;

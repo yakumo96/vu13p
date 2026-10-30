@@ -317,7 +317,7 @@ fir_top dut_top_inst(
     .i2c_sda_i  (dut_sda_i              ),//i
     .i2c_sda_o  (dut_sda_o              ),//o
     .i2c_sda_t  (dut_sda_t              ),//o
-	.testvec    (testvec                ) //o送到逻辑分析仪的测试矢量
+	.testvec    (testvec                ) //o ロジックアナライザに送るテストベクタ
 );                 
                       
 assign sink_s2mm_aclk      =  tb_clk    ;//i//--input                    

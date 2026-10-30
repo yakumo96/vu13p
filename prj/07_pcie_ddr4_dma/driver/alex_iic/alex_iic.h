@@ -1,7 +1,7 @@
 //========================================================================
 //        author   : masw
 //        email    : masw@masw.tech     
-//        creattime: 2023年08月20日 星期日 23时25分15秒
+//        creattime: 2023年08月20日 日曜日 23時25分15秒
 //========================================================================
 
 #ifndef __ALEX_IIC_H__
@@ -24,28 +24,28 @@ typedef uint64_t u64;
 //typedef uintptr_t UINTPTR;
 
 
-#define ALEX_MASK_BUSY      0x00000001//当模块正在执行 I2C 操作时为高
-#define ALEX_MASK_BUS_CONT  0x00000002//当模块控制活动总线时为高
-#define ALEX_MASK_BUS_ACT   0x00000004//总线活动时为高
-#define ALEX_MASK_MISS_ACK  0x00000008//当来自从设备的 ACK 脉冲未被检测到时设置为高；写入 1 来清除
-#define ALEX_MASK_CMD_EMPTY 0x00000100//命令 FIFO 为空
-#define ALEX_MASK_CMD_FULL  0x00000200//命令 FIFO 满
-#define ALEX_MASK_CMD_OVF   0x00000400//命令 FIFO 溢出；写入 1 来清除
-#define ALEX_MASK_WR_EMPTY  0x00000800//写入数据 FIFO 为空
-#define ALEX_MASK_WR_FULL   0x00001000//写入数据 FIFO 满
-#define ALEX_MASK_WR_OVF    0x00002000//写入数据 FIFO 溢出；写入 1 来清除
-#define ALEX_MASK_RD_EMPTY  0x00004000//读取数据 FIFO 为空
-#define ALEX_MASK_RD_FULL   0x00008000//读取数据 FIFO 满
+#define ALEX_MASK_BUSY      0x00000001//モジュールが I2C 操作を実行中のとき High
+#define ALEX_MASK_BUS_CONT  0x00000002//モジュールがアクティブなバスを制御しているとき High
+#define ALEX_MASK_BUS_ACT   0x00000004//バスがアクティブなとき High
+#define ALEX_MASK_MISS_ACK  0x00000008//スレーブからの ACK パルスが検出されなかったとき High にセット；1 を書き込むとクリア
+#define ALEX_MASK_CMD_EMPTY 0x00000100//コマンド FIFO が空
+#define ALEX_MASK_CMD_FULL  0x00000200//コマンド FIFO が満杯
+#define ALEX_MASK_CMD_OVF   0x00000400//コマンド FIFO オーバーフロー；1 を書き込むとクリア
+#define ALEX_MASK_WR_EMPTY  0x00000800//書き込みデータ FIFO が空
+#define ALEX_MASK_WR_FULL   0x00001000//書き込みデータ FIFO が満杯
+#define ALEX_MASK_WR_OVF    0x00002000//書き込みデータ FIFO オーバーフロー；1 を書き込むとクリア
+#define ALEX_MASK_RD_EMPTY  0x00004000//読み出しデータ FIFO が空
+#define ALEX_MASK_RD_FULL   0x00008000//読み出しデータ FIFO が満杯
 
 
-#define ALEX_CMD_START          0x00000100 //：设置为高以发出 I2C 启动，写入以将其推入命令 FIFO
-#define ALEX_CMD_READ           0x00000200 //：设置为高以开始读取，写入以将其推入命令 FIFO
-#define ALEX_CMD_WRITE          0x00000400 //：设置为高以开始写入，写入以将其推入命令 FIFO
-#define ALEX_CMD_WRITE_MULTIPLE 0x00000800 //：设置为高以开始块写入，写入以将其推入命令 FIFO
-#define ALEX_CMD_STOP           0x00000100 //：设置为高以发出 I2C 停止，写入以将其推入命令 FIFO
+#define ALEX_CMD_START          0x00000100 //：High にすると I2C スタートを発行。書き込むとコマンド FIFO に投入される
+#define ALEX_CMD_READ           0x00000200 //：High にすると読み出しを開始。書き込むとコマンド FIFO に投入される
+#define ALEX_CMD_WRITE          0x00000400 //：High にすると書き込みを開始。書き込むとコマンド FIFO に投入される
+#define ALEX_CMD_WRITE_MULTIPLE 0x00000800 //：High にするとブロック書き込みを開始。書き込むとコマンド FIFO に投入される
+#define ALEX_CMD_STOP           0x00000100 //：High にすると I2C ストップを発行。書き込むとコマンド FIFO に投入される
 
-#define ALEX_DATA_VALID         0x00000100 //：表示有效的读取数据，必须使用原子 16 位读取和写入访问
-#define ALEX_DATA_LAST          0x00000200 //：指示块写入（write_multiple）的最后一个字节，必须使用原子 16 位读取和写入访问
+#define ALEX_DATA_VALID         0x00000100 //：有効な読み出しデータであることを示す。16 ビットのアトミックな読み書きアクセスを使う必要がある
+#define ALEX_DATA_LAST          0x00000200 //：ブロック書き込み（write_multiple）の最終バイトを示す。16 ビットのアトミックな読み書きアクセスを使う必要がある
 
 
 

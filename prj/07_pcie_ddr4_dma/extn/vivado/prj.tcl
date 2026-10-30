@@ -12,24 +12,24 @@ set device     "xcvu13p-fhgb2104-2l-e"
 create_project $top_module $outputDir -part $device -force
 set_property target_language verilog [current_project]
 
-# 添加 Verilog 文件
+# Verilog ファイルを追加
 source $srcfiles
-# 添加 XDC约束文件
+# XDC 制約ファイルを追加
 source $xdcfiles
 
 # set top module
 set_property top $top_module [current_fileset]
 update_compile_order -fileset sources_1
 
-# 开始编译
+# コンパイル開始
 launch_runs synth_1 -jobs $jobs
 wait_on_run synth_1
 
 
-# 生成bin/bit文件
+# bin/bit ファイルを生成
 # set_property STEPS.WRITE_BITSTREAM.ARGS.BIN_FILE true [get_runs impl_1]
 
-# 布局布线
+# 配置配線
 launch_runs impl_1 -to_step write_bitstream -jobs $jobs
 wait_on_run impl_1
 

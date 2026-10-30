@@ -8,7 +8,7 @@ core_jobs=20
 
 rebuild: syn impl genbit
 
-# 以下语句可以单独执行
+# 以下の文は個別に実行できます
 create_prj:
 	echo ${output_path}
 	vivado -nojournal -nolog -mode batch -source ./tcl/prj_create.tcl -tclargs ${fpga_top_name} ${output_path} 

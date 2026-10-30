@@ -7,30 +7,30 @@
 #include <string.h>
 #include <errno.h>
 
-#define BAR_SIZE 1024/2  // 固定读取1024字节
+#define BAR_SIZE 1024/2  // 固定で 1024 バイト読み出す
 
 int main(int argc, char *argv[]) {
     int fd;
     void *map_base;
     off_t offset;
     
-    // 检查命令行参数
+    // コマンドライン引数をチェック
     if (argc != 2) {
         fprintf(stderr, "用法: %s <偏移地址(十六进制)>\n", argv[0]);
         return 1;
     }
     
-    // 解析偏移地址参数
+    // オフセットアドレス引数を解析
     offset = strtoul(argv[1], NULL, 16);
     
-    // 打开设备文件
+    // デバイスファイルを開く
     fd = open("/dev/xdma0_user", O_RDWR | O_SYNC);
     if (fd == -1) {
         fprintf(stderr, "无法打开设备文件: %s\n", strerror(errno));
         return 1;
     }
     
-    // 映射内存区域
+    // メモリ領域をマップ
     map_base = mmap(NULL, BAR_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0x30000);
     if (map_base == MAP_FAILED) {
         fprintf(stderr, "内存映射失败: %s\n", strerror(errno));
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
     
     printf("成功映射内存，地址偏移: 0x%lx\n", offset);
     
-    // 读取并显示内存内容
+    // メモリ内容を読み出して表示
     printf("内存内容 (1024 字节):\n");
     for (int i = 0; i < BAR_SIZE; i++) {
         if (i % 16 == 0) {
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
     }
     printf("\n");
     
-    // 清理
+    // 後片付け
     if (munmap(map_base, BAR_SIZE) == -1) {
         fprintf(stderr, "取消内存映射失败: %s\n", strerror(errno));
     }

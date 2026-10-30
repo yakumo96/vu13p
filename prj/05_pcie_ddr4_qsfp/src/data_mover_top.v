@@ -1,7 +1,7 @@
 //========================================================================
 //        author   : masw
 //        email    : masw@masw.tech     
-//        creattime: 2023年11月10日 星期五 22时42分53秒
+//        creattime: 2023年11月10日 金曜日 22時42分53秒
 //========================================================================
 
 /* design by masw@masw.tech 
@@ -204,17 +204,17 @@ wire        S_AXIS_aresetn                ;
 base base_i (
     .axi_aclk                            (axi_aclk                        ),//o1
     .axi_aresetn                         (axi_aresetn                     ),//o1
-	//数据流 Master通道为32bit, 主频100M, 独立时钟域
+	//データストリーム Master チャネルは 32bit、動作周波数 100M、独立クロックドメイン
     .m_axis_aclk                         (M_AXIS_aclk                     ),//i1
-	.m_axis_aresetn                      (M_AXIS_aresetn                  ),//o1, 内部复位输出
+	.m_axis_aresetn                      (M_AXIS_aresetn                  ),//o1, 内部リセット出力
     .M_AXIS_tdata                        (M_AXIS_tdata                    ),//o32
     .M_AXIS_tkeep                        (M_AXIS_tkeep                    ),//o4
     .M_AXIS_tlast                        (M_AXIS_tlast                    ),//o1
     .M_AXIS_tready                       (M_AXIS_tready                   ),//i1,
     .M_AXIS_tvalid                       (M_AXIS_tvalid                   ),//o1
-	//数据流 Slave 通道为64bit, 仅仅用于将UDP数据流写入DDR4, 主频390.625M , 与UDP同时钟域
+	//データストリーム Slave チャネルは 64bit、UDP データストリームを DDR4 に書き込む用途のみ、動作周波数 390.625M、UDP と同一クロックドメイン
     .s_axis_aclk                         ( qsfp_0_rx_clk_0_int            ),
-    .s_axis_aresetn                      (                                ),//o1, 内部复位输出
+    .s_axis_aresetn                      (                                ),//o1, 内部リセット出力
     .S_AXIS_tdata                        (rx_fifo_udp_payload_axis_tdata  ),//i64
     .S_AXIS_tkeep                        (rx_fifo_udp_payload_axis_tkeep  ),//i8
     .S_AXIS_tlast                        (rx_fifo_udp_payload_axis_tlast  ),//i1

@@ -15,6 +15,6 @@ write_hw_platform -fixed -force -file ${fpga_top_name}_${current_time}_${tag}.xs
 #write_cfgmem -format bin -file  ${fpga_top_name}_${current_time}_${tag}.bin -size 256 -interface SPIx4 -loadbit \
 #                {up 0x00000000 "${fpga_top_name}_${current_time}_${tag}_tandem1.bit"\
 #                 up 0x02000000 "${fpga_top_name}_${current_time}_${tag}_tandem2.bit"} 
-			 # 前32M留给tandem1 
+			 # 先頭 32M は tandem1 用に確保 
 
 

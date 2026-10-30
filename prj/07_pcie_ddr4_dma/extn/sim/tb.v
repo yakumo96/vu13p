@@ -27,7 +27,7 @@ reg [15:0] total_time = 30000;
 //            $display("仿真进度: %d%% (%d / %d)", (progress_counter * 100) / total_time, progress_counter, total_time);
 //        end
 //    end else begin
-//        // 完成进度条，终止仿真
+//        // プログレスバーを完了し、シミュレーションを終了
 //        $display("仿真进度: 100%% (%d / %d)", total_time, total_time);
 //        $finish;
 //    end
@@ -38,7 +38,7 @@ always @(posedge clk) begin
 
     if (progress_counter <= total_time) begin
         if (progress_counter % (total_time / 100) == 0) begin
-            // 打印进度条
+            // プログレスバーを表示
             //$write("\033[2J\033[H");
             $write("仿真进度 |");
             for (i = 0; i < (progress_counter * 100) / total_time; i = i + 1) begin
@@ -50,7 +50,7 @@ always @(posedge clk) begin
             $write("| %d%% (%d / %d)\n", (progress_counter * 100) / total_time, progress_counter, total_time);
         end
     end else begin
-        // 完成进度条，终止仿真
+        // プログレスバーを完了し、シミュレーションを終了
         $display("\r|##################################################| 100%% (%d / %d)", total_time, total_time);
         $finish;
     end
@@ -73,9 +73,9 @@ end
 reg signed[15:0] signal_data;
 integer file_pointer;
 initial begin
-    // 打开文件
+    // ファイルを開く
     file_pointer = $fopen("combined_signal.txt", "r");
-    // 检查文件是否打开成功
+    // ファイルが正常に開けたか確認
     if (file_pointer == 0) begin
         $display("Error: Unable to open the file.combined_signal.txt, run gensource.py first!\n");
         $finish;
@@ -83,7 +83,7 @@ initial begin
 end
 
 always @(posedge clk) begin
-    // 如果文件尚未结束且读取状态正常，则读取数据
+    // ファイルが終端に達しておらず読み取り状態が正常なら、データを読み込む
     if (!$feof(file_pointer) ) begin
         //$fscanf(file_pointer, "%d\n", signal_data);
         if ($fscanf(file_pointer, "%d\n", signal_data) == 1) begin

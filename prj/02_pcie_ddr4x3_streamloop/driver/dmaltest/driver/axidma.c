@@ -1,26 +1,26 @@
 #include "./axidma.h"
 #include "./axidma_cfg.h"
 /**
- * 打印单个MM2S DMA描述符的详细内容
- * @param desc_ptr 描述符指针
- * @param desc_index 描述符索引（用于显示）
+ * 1 つの MM2S DMA ディスクリプタの詳細な内容を表示
+ * @param desc_ptr ディスクリプタポインタ
+ * @param desc_index ディスクリプタのインデックス（表示用）
  */
 void print_s2mm_dma_registers(s2mm_dma_t *dma);
 void print_mm2s_dma_registers(mm2s_dma_t *mm2s_dma);
 void print_mm2s_descriptor(volatile uint32_t *desc_ptr);
 
-// 打开设备文件并映射内存
+// デバイスファイルを開いてメモリをマップ
 int init_mm2s_dma(mm2s_dma_t *dma, const char *filename) {
     struct stat st;
 
-    // 打开DMA控制器
+    // DMA コントローラを開く
     dma->dma_fd = open(BAR_SPACE_FD, O_RDWR | O_SYNC);
     if (dma->dma_fd < 0) {
         perror("Failed to open DMA controller");
         return -1;
     }
 
-    // 映射DMA寄存器
+    // DMA レジスタをマップ
     dma->dma_regs = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED,
                           dma->dma_fd, DMA_DEV_BASE_ADDR);
     if (dma->dma_regs == MAP_FAILED) {
@@ -29,7 +29,7 @@ int init_mm2s_dma(mm2s_dma_t *dma, const char *filename) {
         return -1;
     }
 
-    // 映射描述符空间
+    // ディスクリプタ空間をマップ
     dma->desc_base = mmap(NULL, DMA_DESC_ALL_SIZE/2, PROT_READ | PROT_WRITE, MAP_SHARED,
                            dma->dma_fd, DMA_DESC_BASE_ADDR);
     if (dma->desc_base == MAP_FAILED) {
@@ -39,7 +39,7 @@ int init_mm2s_dma(mm2s_dma_t *dma, const char *filename) {
         return -1;
     }
 
-    // 打开数据文件
+    // データファイルを開く
     dma->data_fd = open(H2C0_BUFFER_FD, O_RDWR | O_SYNC);
     if (dma->data_fd < 0) {
         perror("Failed to open data device");
@@ -49,7 +49,7 @@ int init_mm2s_dma(mm2s_dma_t *dma, const char *filename) {
         return -1;
     }
 
-    // 打开事件文件
+    // イベントファイルを開く
     dma->event_fd = open(MM2S_INTERP_FD, O_RDONLY);
     if (dma->event_fd < 0) {
         perror("Failed to open event device");
@@ -60,7 +60,7 @@ int init_mm2s_dma(mm2s_dma_t *dma, const char *filename) {
         return -1;
     }
 
-    // 获取输入文件大小
+    // 入力ファイルのサイズを取得
     if (stat(filename, &st) < 0) {
         perror("Failed to get file size");
         close(dma->event_fd);
@@ -72,10 +72,10 @@ int init_mm2s_dma(mm2s_dma_t *dma, const char *filename) {
     }
     dma->file_size = st.st_size;
 
-    // 确定缓冲区大小
+    // バッファサイズを決定
     dma->buffer_size = (dma->file_size < MM2S_BUFFER_SIZE) ? dma->file_size : MM2S_BUFFER_SIZE;
 
-    // 分配内存缓冲区，而不是映射
+    // マップではなくメモリバッファを確保
     dma->buffer = malloc(dma->buffer_size);
     if (dma->buffer == NULL) {
         perror("Failed to allocate buffer memory");
@@ -90,12 +90,12 @@ int init_mm2s_dma(mm2s_dma_t *dma, const char *filename) {
     dma->bytes_sent = 0;
     dma->running = 1;
 
-    // 确定是否使用循环模式
+    // ループモードを使うかどうかを決定
     dma->is_cyclic = (dma->file_size > dma->buffer_size);
 
     return 0;
 }
-// 加载文件数据到缓冲区
+// ファイルデータをバッファにロード
 int load_file_to_buffer(mm2s_dma_t *dma, const char *filename) {
     int fd;
     ssize_t bytes_read = 0;
@@ -108,7 +108,7 @@ int load_file_to_buffer(mm2s_dma_t *dma, const char *filename) {
         return -1;
     }
 
-    // 读取文件内容到缓冲区
+    // ファイル内容をバッファに読み込む
     while (total_read < dma->buffer_size &&
            (bytes_read = read(fd, buf_ptr + total_read,
                              dma->buffer_size - total_read)) > 0) {
@@ -123,7 +123,7 @@ int load_file_to_buffer(mm2s_dma_t *dma, const char *filename) {
 
     close(fd);
 
-    // 将缓冲区写入H2C设备
+    // バッファを H2C デバイスに書き込む
     ssize_t bytes_written = 0;
     size_t total_written = 0;
 
@@ -140,23 +140,23 @@ int load_file_to_buffer(mm2s_dma_t *dma, const char *filename) {
     printf("Loaded %zu bytes from file to buffer and wrote to H2C device\n", total_written);
     return 0;
 }
-// 配置MM2S描述符链
+// MM2S ディスクリプタチェーンを設定
 int setup_mm2s_descriptors(mm2s_dma_t *dma) {
-    uint8_t *mm2s_desc_base = (uint8_t *)dma->desc_base ; // MM2S描述符在高32KB
+    uint8_t *mm2s_desc_base = (uint8_t *)dma->desc_base ; // MM2S ディスクリプタは上位 32KB に配置
     uint64_t remaining_size = dma->file_size;
     uint64_t buffer_offset = MM2S_BUFFER_BASEADDR ;
     uint32_t desc_idx = 0;
     uint64_t transfer_size;
     
-    // 计算需要的描述符数量
+    // 必要なディスクリプタ数を計算
     if (dma->file_size <= MM2S_ONE_PACKET_SIZE) {
-        // 如果文件小于单个包大小，只需一个描述符
+        // ファイルが 1 パケットのサイズより小さければ、ディスクリプタは 1 つで済む
         dma->desc_count = 1;
         transfer_size = dma->file_size;
     } else {
-        // 计算需要多少个MM2S_ONE_PACKET_SIZE的描述符
+        // MM2S_ONE_PACKET_SIZE のディスクリプタがいくつ必要かを計算
         dma->desc_count = (dma->file_size + MM2S_ONE_PACKET_SIZE - 1) / MM2S_ONE_PACKET_SIZE;
-        if (dma->desc_count > MAX_DESC_COUNT) {//MAX_DESC_COUNT定义在头文件中 = 512
+        if (dma->desc_count > MAX_DESC_COUNT) {//MAX_DESC_COUNT はヘッダファイルで定義 = 512
             dma->desc_count = MAX_DESC_COUNT;
         }
         transfer_size = MM2S_ONE_PACKET_SIZE;
@@ -164,41 +164,41 @@ int setup_mm2s_descriptors(mm2s_dma_t *dma) {
     
     printf("Setting up %d MM2S descriptors\n", dma->desc_count);
     
-    // 配置每个描述符
+    // 各ディスクリプタを設定
     for (desc_idx = 0; desc_idx < dma->desc_count; desc_idx++) {
         volatile uint8_t *desc = mm2s_desc_base + desc_idx * DESC_SIZE;
         uint64_t next_desc_addr = ((desc_idx + 1) % dma->desc_count) * DESC_SIZE + DMA_DESC_BASE_ADDR ;
         uint64_t buffer_addr = buffer_offset;
         uint32_t control = 0;
        
-        // 如果剩余大小小于传输大小，调整传输大小
+        // 残りサイズが転送サイズより小さければ、転送サイズを調整
         if (remaining_size < transfer_size) {
             transfer_size = remaining_size;
         }
         
-        // 设置下一个描述符地址
+        // 次のディスクリプタアドレスを設定
         *(volatile uint32_t *)(desc + NXTDESC_OFFSET) = next_desc_addr & 0xFFFFFFFC;
         *(volatile uint32_t *)(desc + NXTDESC_MSB_OFFSET) = next_desc_addr >> 32;
         
-        // 设置缓冲区地址
+        // バッファアドレスを設定
         *(volatile uint32_t *)(desc + BUFFER_ADDR_OFFSET) = buffer_addr & 0xFFFFFFFF;
         *(volatile uint32_t *)(desc + BUFFER_ADDR_MSB_OFFSET) = buffer_addr >> 32;
         
-        // 设置控制字段
-        control = transfer_size & 0x3FFFFFF; // 传输大小
+        // 制御フィールドを設定
+        control = transfer_size & 0x3FFFFFF; // 転送サイズ
         
-        // 设置SOF和EOF标志, 注意，在配置的包长时间内，必须有tlast信号
+        // SOF と EOF フラグを設定。注意：設定したパケット長の期間内に必ず tlast 信号が必要
         //if (desc_idx == 0 || buffer_offset == 0) {
-        //    control |= CONTROL_TXSOF; // 第一个描述符或新包的开始
+        //    control |= CONTROL_TXSOF; // 最初のディスクリプタ、または新しいパケットの開始
         //}
         //if ((desc_idx == (dma->desc_count - 1)) || remaining_size == transfer_size) {
-        //    control |= CONTROL_TXEOF; // 最后一个描述符或包的结束
+        //    control |= CONTROL_TXEOF; // 最後のディスクリプタ、またはパケットの終了
         //}
-        control |= CONTROL_TXSOF ; // 第一个描述符或新包的开始
-        control |= CONTROL_TXEOF; // 最后一个描述符或包的结束
+        control |= CONTROL_TXSOF ; // 最初のディスクリプタ、または新しいパケットの開始
+        control |= CONTROL_TXEOF; // 最後のディスクリプタ、またはパケットの終了
         *(volatile uint32_t *)(desc + CONTROL_OFFSET) = control;
 
-        // 清除状态字段
+        // ステータスフィールドをクリア
         *(volatile uint32_t *)(desc + STATUS_OFFSET) = 0;
         
         buffer_offset += transfer_size;
@@ -211,53 +211,53 @@ int setup_mm2s_descriptors(mm2s_dma_t *dma) {
     
     return 0;
 }
-// 启动MM2S DMA传输
+// MM2S DMA 転送を開始
 int start_mm2s_dma(mm2s_dma_t *dma) {
     uint32_t dmacr, dmasr;
-    uint64_t first_desc_addr = DMA_DESC_BASE_ADDR ; // MM2S描述符起始地址
+    uint64_t first_desc_addr = DMA_DESC_BASE_ADDR ; // MM2S ディスクリプタの開始アドレス
     uint64_t tail_desc_addr;
     
-    // 等待DMA处于停止状态
+    // DMA が停止状態になるのを待つ
     dmasr = *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_DMASR);
     if (!(dmasr & DMASR_HALTED)) {
-        // 如果DMA未停止，先停止它
+        // DMA が停止していなければ、先に停止させる
         dmacr = *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_DMACR);
         dmacr &= ~DMACR_RS;
         *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_DMACR) = dmacr;
         
-        // 等待DMA停止
+        // DMA の停止を待つ
         do {
             dmasr = *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_DMASR);
         } while (!(dmasr & DMASR_HALTED));
     }
     
-    // 软复位DMA
+    // DMA をソフトリセット
     dmacr = *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_DMACR);
     dmacr |= DMACR_RESET;
     *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_DMACR) = dmacr;
     
-    // 等待复位完成
+    // リセット完了を待つ
     do {
         dmacr = *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_DMACR);
     } while (dmacr & DMACR_RESET);
     
-    // 设置当前描述符指针
+    // カレントディスクリプタポインタを設定
     *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_CURDESC) = first_desc_addr & 0xFFFFFFFC;
     *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_CURDESC_MSB) = first_desc_addr >> 32;
     
-    // 配置DMA控制寄存器
+    // DMA 制御レジスタを設定
     dmacr = DMACR_DLY_IRQ | DMACR_IOC_IRQ | DMACR_ERR_IRQ;
     
-    // 如果需要循环模式
+    // ループモードが必要な場合
     if (dma->is_cyclic) {
         dmacr |= DMACR_CYCLIC;
     }
     
-    // 启动DMA
+    // DMA を起動
     dmacr |= DMACR_RS;
     *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_DMACR) = dmacr;
     
-    // 设置尾描述符指针
+    // テールディスクリプタポインタを設定
     if (dma->desc_count > 1) {
         tail_desc_addr =  (dma->desc_count - 1) * DESC_SIZE + DMA_DESC_BASE_ADDR ;
     } else {
@@ -273,37 +273,37 @@ int start_mm2s_dma(mm2s_dma_t *dma) {
     return 0;
 }
 
-// 中断处理线程
+// 割り込み処理スレッド
 void *mm2s_event_handler_thread(void *arg) {
     mm2s_dma_t *dma = (mm2s_dma_t *)arg;
     uint32_t event_data;
     struct pollfd fds[1];
     
-    // 设置poll结构
+    // poll 構造体を設定
     fds[0].fd = dma->event_fd;
     fds[0].events = POLLIN;
     
     printf("MM2S中断处理线程启动, 使用POLL模式等待中断dma->running=%d, \n", dma->running);
 
     while (dma->running) {
-        // 使用poll等待事件，超时时间设为100ms
+        // poll でイベントを待つ。タイムアウトは 100ms
         int ret = poll(fds, 1, 100);
 
         if (ret < 0) {
-            // 出错处理
+            // エラー処理
             if (errno == EINTR) {
-                continue;  // 被信号中断，继续循环
+                continue;  // シグナルで中断された。ループを継続
             }
             perror("MM2S poll error");
             break;
         } else if (ret == 0) {
-            // 超时，继续循环
+            // タイムアウト。ループを継続
             continue;
         }
         
-        // 检查是否有可读事件
+        // 読み取り可能なイベントがあるか確認
         if (fds[0].revents & POLLIN) {
-            // 读取事件数据
+            // イベントデータを読み出す
             ssize_t bytes_read = read(dma->event_fd, &event_data, sizeof(event_data));
             if (bytes_read <= 0) {
                 if (errno == EAGAIN || errno == EINTR) {
@@ -315,15 +315,15 @@ void *mm2s_event_handler_thread(void *arg) {
             
             //printf("Received mm2s interrupt event: 0x%08x\n", event_data);
             
-            // 检查DMA状态
+            // DMA の状態を確認
             uint32_t dmasr = *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_DMASR);
             
-            // 清除中断标志
+            // 割り込みフラグをクリア
             if (dmasr & DMASR_IOC_IRQ) {
                 *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_DMASR) = DMASR_IOC_IRQ;
                 //printf("IOC interrupt cleared\n");
                 
-                // 更新已发送字节数
+                // 送信済みバイト数を更新
                 dma->bytes_sent += MM2S_ONE_PACKET_SIZE;
                 if (dma->bytes_sent > dma->file_size) {
                     dma->bytes_sent = dma->file_size;
@@ -331,7 +331,7 @@ void *mm2s_event_handler_thread(void *arg) {
                 
                 printf("Bytes sent: %08lx / %08lx\n", dma->bytes_sent, dma->file_size);
                 
-                // 如果所有数据都已发送，停止DMA
+                // すべてのデータを送信済みなら DMA を停止
                 if (dma->bytes_sent >= dma->file_size && !dma->is_cyclic) {
                     printf("All data sent, stopping DMA\n");
                     uint32_t dmacr = *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_DMACR);
@@ -342,12 +342,12 @@ void *mm2s_event_handler_thread(void *arg) {
                 }
             }
             
-            // 处理错误中断
+            // エラー割り込みを処理
             if (dmasr & DMASR_ERR_IRQ) {
                 *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_DMASR) = DMASR_ERR_IRQ;
                 printf("Error mm2s interrupt received, DMA status: 0x%08x\n", dmasr);
                 
-                // 如果发生错误，停止 MM2S 的 DMA
+                // エラーが発生したら MM2S の DMA を停止
                 uint32_t dmacr = *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_DMACR);
                 dmacr &= ~DMACR_RS;
                 *(volatile uint32_t *)((uint8_t *)dma->dma_regs + MM2S_DMACR) = dmacr;
@@ -356,7 +356,7 @@ void *mm2s_event_handler_thread(void *arg) {
             }
         }
         
-        // 检查错误事件
+        // エラーイベントを確認
         if (fds[0].revents & (POLLERR | POLLHUP | POLLNVAL)) {
             printf("MM2S poll error event: 0x%x\n", fds[0].revents);
             break;
@@ -366,7 +366,7 @@ void *mm2s_event_handler_thread(void *arg) {
     return NULL;
 }
 
-// 初始化工作队列
+// ワークキューを初期化
 int init_work_queue(work_queue_t *queue, int capacity) {
     queue->items = (work_item_t *)malloc(capacity * sizeof(work_item_t));
     if (!queue->items) {
@@ -403,57 +403,57 @@ int init_work_queue(work_queue_t *queue, int capacity) {
     return 0;
 }
 
-// 入队工作项
+// ワーク項目をエンキュー
 int enqueue_work(work_queue_t *queue, void *buffer, size_t size, int frame_index) {
     pthread_mutex_lock(&queue->mutex);
     
-    // 等待队列非满
+    // キューが満杯でなくなるのを待つ
     while (queue->count == queue->capacity) {
         pthread_cond_wait(&queue->not_full, &queue->mutex);
     }
     
-    // 添加工作项
+    // ワーク項目を追加
     work_item_t *item = &queue->items[queue->tail];
     item->buffer = buffer;
     item->size = size;
     item->frame_index = frame_index;
     clock_gettime(CLOCK_REALTIME, &item->ts);
     
-    // 更新队列
+    // キューを更新
     queue->tail = (queue->tail + 1) % queue->capacity;
     queue->count++;
     
-    // 通知消费者
+    // コンシューマに通知
     pthread_cond_signal(&queue->not_empty);
     pthread_mutex_unlock(&queue->mutex);
     
     return 0;
 }
 
-// 出队工作项
+// ワーク項目をデキュー
 int dequeue_work(work_queue_t *queue, work_item_t *item) {
     pthread_mutex_lock(&queue->mutex);
     
-    // 等待队列非空
+    // キューが空でなくなるのを待つ
     while (queue->count == 0) {
         pthread_cond_wait(&queue->not_empty, &queue->mutex);
     }
     
-    // 获取工作项
+    // ワーク項目を取得
     *item = queue->items[queue->head];
     
-    // 更新队列
+    // キューを更新
     queue->head = (queue->head + 1) % queue->capacity;
     queue->count--;
     
-    // 通知生产者
+    // プロデューサに通知
     pthread_cond_signal(&queue->not_full);
     pthread_mutex_unlock(&queue->mutex);
     
     return 0;
 }
 
-// 销毁工作队列
+// ワークキューを破棄
 void destroy_work_queue(work_queue_t *queue) {
     pthread_mutex_destroy(&queue->mutex);
     pthread_cond_destroy(&queue->not_empty);
@@ -461,19 +461,19 @@ void destroy_work_queue(work_queue_t *queue) {
     free(queue->items);
 }
 
-// 初始化S2MM DMA
+// S2MM DMA を初期化
 int init_s2mm_dma(s2mm_dma_t *dma, const char *output_dir) {
     memset(dma, 0, sizeof(s2mm_dma_t));
     strncpy(dma->output_dir, output_dir, sizeof(dma->output_dir) - 1);
 
-    // 打开DMA控制器
+    // DMA コントローラを開く
     dma->dma_fd = open(BAR_SPACE_FD, O_RDWR | O_SYNC);
     if (dma->dma_fd < 0) {
         perror("Failed to open DMA controller");
         return -1;
     }
 
-    // 映射DMA寄存器
+    // DMA レジスタをマップ
     dma->dma_regs = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED,
                           dma->dma_fd, DMA_DEV_BASE_ADDR);
     if (dma->dma_regs == MAP_FAILED) {
@@ -482,7 +482,7 @@ int init_s2mm_dma(s2mm_dma_t *dma, const char *output_dir) {
         return -1;
     }
 
-    // 映射描述符空间
+    // ディスクリプタ空間をマップ
     dma->desc_base = mmap(NULL, DMA_DESC_ALL_SIZE/2, PROT_READ | PROT_WRITE, MAP_SHARED,
                            dma->dma_fd, DMA_DESC_BASE_ADDR+DMA_DESC_ALL_SIZE/2);
     if (dma->desc_base == MAP_FAILED) {
@@ -492,7 +492,7 @@ int init_s2mm_dma(s2mm_dma_t *dma, const char *output_dir) {
         return -1;
     }
 
-    // 打开数据文件
+    // データファイルを開く
     dma->data_fd = open(C2H0_BUFFER_FD, O_RDWR | O_SYNC);
     if (dma->data_fd < 0) {
         perror("Failed to open data device");
@@ -502,7 +502,7 @@ int init_s2mm_dma(s2mm_dma_t *dma, const char *output_dir) {
         return -1;
     }
 
-    // 打开事件文件
+    // イベントファイルを開く
     dma->event_fd = open(S2MM_INTERP_FD, O_RDONLY);
     if (dma->event_fd < 0) {
         perror("Failed to open event device");
@@ -513,7 +513,7 @@ int init_s2mm_dma(s2mm_dma_t *dma, const char *output_dir) {
         return -1;
     }
 
-    // 设置缓冲区大小和描述符数量
+    // バッファサイズとディスクリプタ数を設定
     dma->buffer_size = S2MM_BUFFER_SIZE;
     dma->desc_count = MAX_DESC_COUNT;
     dma->desc_size = DESC_SIZE;
@@ -522,7 +522,7 @@ int init_s2mm_dma(s2mm_dma_t *dma, const char *output_dir) {
 	printf("dma->desc_count   = 0x%08x\n", dma->desc_count);
 	printf("dma->segment_size = 0x%08lx\n", dma->segment_size);
 
-    // 分配内存缓冲区，而不是映射
+    // マップではなくメモリバッファを確保
     dma->buffer = malloc(dma->buffer_size);
     if (dma->buffer == NULL) {
         perror("Failed to allocate buffer memory");
@@ -534,7 +534,7 @@ int init_s2mm_dma(s2mm_dma_t *dma, const char *output_dir) {
         return -1;
     }
 
-    // 分配描述符状态数组
+    // ディスクリプタ状態の配列を確保
     dma->desc_status = (desc_status_t *)calloc(dma->desc_count, sizeof(desc_status_t));
     if (!dma->desc_status) {
         perror("Failed to allocate descriptor status array");
@@ -547,7 +547,7 @@ int init_s2mm_dma(s2mm_dma_t *dma, const char *output_dir) {
         return -1;
     }
 
-    // 初始化工作队列
+    // ワークキューを初期化
     if (init_work_queue(&dma->work_queue, S2MM_WORK_QUEUE) != 0) {
         free(dma->desc_status);
         free(dma->buffer);
@@ -566,34 +566,34 @@ int init_s2mm_dma(s2mm_dma_t *dma, const char *output_dir) {
 }
 
 
-// 设置S2MM描述符
+// S2MM ディスクリプタを設定
 int setup_s2mm_descriptors(s2mm_dma_t *dma) {
-    uint8_t *s2mm_desc_base = (uint8_t *)dma->desc_base ; // S2MM描述符在低32KB
+    uint8_t *s2mm_desc_base = (uint8_t *)dma->desc_base ; // S2MM ディスクリプタは下位 32KB に配置
     
     printf("Setting up %d S2MM descriptors, segment size: %zu bytes\n", 
            dma->desc_count, dma->segment_size);
     
-    // 配置每个描述符
+    // 各ディスクリプタを設定
     for (uint32_t i = 0; i < dma->desc_count; i++) {
         volatile uint8_t *desc = s2mm_desc_base + i * dma->desc_size;
         uint64_t next_desc_addr = ((i + 1) % dma->desc_count) * dma->desc_size + DMA_DESC_ALL_SIZE/2 + DMA_DESC_BASE_ADDR ;
-        uint64_t buffer_addr = S2MM_BUFFER_BASEADDR + i * dma->segment_size; // 缓冲区偏移量
+        uint64_t buffer_addr = S2MM_BUFFER_BASEADDR + i * dma->segment_size; // バッファのオフセット
         
-        // 设置下一个描述符地址
+        // 次のディスクリプタアドレスを設定
         *(volatile uint32_t *)(desc + NXTDESC_OFFSET) = next_desc_addr & 0xFFFFFFFC;
         *(volatile uint32_t *)(desc + NXTDESC_MSB_OFFSET) = next_desc_addr >> 32;
         
-        // 设置缓冲区地址
+        // バッファアドレスを設定
         *(volatile uint32_t *)(desc + BUFFER_ADDR_OFFSET) = buffer_addr & 0xFFFFFFFF;
         *(volatile uint32_t *)(desc + BUFFER_ADDR_MSB_OFFSET) = buffer_addr >> 32;
         
-        // 设置控制字段 - 缓冲区大小
+        // 制御フィールドを設定 - バッファサイズ
         *(volatile uint32_t *)(desc + CONTROL_OFFSET) = dma->segment_size & 0x3FFFFFF;
         
-        // 清除状态字段
+        // ステータスフィールドをクリア
         *(volatile uint32_t *)(desc + STATUS_OFFSET) = 0;
         
-        // 初始化描述符状态
+        // ディスクリプタの状態を初期化
         dma->desc_status[i].processed = 0;
         dma->desc_status[i].status = 0;
         dma->desc_status[i].bytes_received = 0;
@@ -604,47 +604,47 @@ int setup_s2mm_descriptors(s2mm_dma_t *dma) {
     return 0;
 }
 
-// 启动S2MM DMA
+// S2MM DMA を起動
 int start_s2mm_dma(s2mm_dma_t *dma) {
     uint32_t dmacr, dmasr;
-    uint64_t first_desc_addr = DMA_DESC_BASE_ADDR + DMA_DESC_ALL_SIZE/2; // S2MM描述符起始地址
+    uint64_t first_desc_addr = DMA_DESC_BASE_ADDR + DMA_DESC_ALL_SIZE/2; // S2MM ディスクリプタの開始アドレス
     uint64_t tail_desc_addr = (dma->desc_count - 1) * dma->desc_size + first_desc_addr;
-    // 等待DMA处于停止状态
+    // DMA が停止状態になるのを待つ
     dmasr = *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_DMASR);
     if (!(dmasr & DMASR_HALTED)) {
-        // 如果DMA未停止，先停止它
+        // DMA が停止していなければ、先に停止させる
         dmacr = *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_DMACR);
         dmacr &= ~DMACR_RS;
         *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_DMACR) = dmacr;
         
-        // 等待DMA停止
+        // DMA の停止を待つ
         do {
             dmasr = *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_DMASR);
         } while (!(dmasr & DMASR_HALTED));
     }
     
-    // 软复位DMA
+    // DMA をソフトリセット
     dmacr = *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_DMACR);
     dmacr |= DMACR_RESET;
     *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_DMACR) = dmacr;
     
-    // 等待复位完成
+    // リセット完了を待つ
     do {
         dmacr = *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_DMACR);
     } while (dmacr & DMACR_RESET);
     
-    // 设置当前描述符指针
+    // カレントディスクリプタポインタを設定
     *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_CURDESC)     = first_desc_addr & 0xFFFFFFFC;
     *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_CURDESC_MSB) = first_desc_addr >> 32;
     
-    // 配置DMA控制寄存器 - 启用循环模式和中断
+    // DMA 制御レジスタを設定 - ループモードと割り込みを有効化
     dmacr = DMACR_CYCLIC | DMACR_IOC_IRQ | DMACR_ERR_IRQ | DMACR_DLY_IRQ;
     
-    // 启动DMA
+    // DMA を起動
     dmacr |= DMACR_RS;
     *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_DMACR) = dmacr;
     
-    // 设置尾描述符指针
+    // テールディスクリプタポインタを設定
     *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_TAILDESC) = tail_desc_addr & 0xFFFFFFFC;
     *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_TAILDESC_MSB) = tail_desc_addr >> 32;
    
@@ -655,7 +655,7 @@ int start_s2mm_dma(s2mm_dma_t *dma) {
     return 0;
 }
 
-// 清理S2MM DMA资源
+// S2MM DMA のリソースを後片付け
 void cleanup_s2mm_dma(s2mm_dma_t *dma) {
     if (dma->desc_status) {
         free(dma->desc_status);
@@ -688,22 +688,22 @@ void cleanup_s2mm_dma(s2mm_dma_t *dma) {
     destroy_work_queue(&dma->work_queue);
 }
 
-// 保存接收到的帧到文件
+// 受信したフレームをファイルに保存
 int save_frame_to_file(s2mm_dma_t *dma, void *buffer, size_t size, int frame_index) {
     char filename[512];
     FILE *fp;
     
-    // 创建文件名
+    // ファイル名を作成
     snprintf(filename, sizeof(filename), "%s/frame_%06d.dat", dma->output_dir, frame_index);
     
-    // 打开文件
+    // ファイルを開く
     fp = fopen(filename, "wb");
     if (!fp) {
         perror("Failed to open output file");
         return -1;
     }
     
-    // 写入数据
+    // データを書き込む
     if (fwrite(buffer, 1, size, fp) != size) {
         perror("Failed to write data to file");
         fclose(fp);
@@ -716,7 +716,7 @@ int save_frame_to_file(s2mm_dma_t *dma, void *buffer, size_t size, int frame_ind
     return 0;
 }
 
-// 工作线程 - 处理工作队列中的项目
+// ワーカースレッド - ワークキュー内の項目を処理
 void *worker_thread(void *arg) {
     s2mm_dma_t *dma = (s2mm_dma_t *)arg;
     work_item_t item;
@@ -724,14 +724,14 @@ void *worker_thread(void *arg) {
     printf("Worker thread started\n");
     
     while (dma->running) {
-        // 从队列中获取工作项
+        // キューからワーク項目を取得
         if (dequeue_work(&dma->work_queue, &item) == 0) {
-            // 保存帧到文件
+            // フレームをファイルに保存
             save_frame_to_file(dma, item.buffer, item.size, item.frame_index);
         }
     }
     
-    // 处理队列中剩余的工作项
+    // キューに残っているワーク項目を処理
     while (dma->work_queue.count > 0) {
         if (dequeue_work(&dma->work_queue, &item) == 0) {
             save_frame_to_file(dma, item.buffer, item.size, item.frame_index);
@@ -741,17 +741,17 @@ void *worker_thread(void *arg) {
     printf("Worker thread exiting\n");
     return NULL;
 }
-// 处理S2MM描述符的状态
+// S2MM ディスクリプタの状態を処理
 void process_descriptors(s2mm_dma_t *dma) {
     uint8_t *s2mm_desc_base = (uint8_t *)dma->desc_base;
     int sof_index = -1;
     int eof_index = -1;
     int found_frame = 0;
 
-    // 使用静态变量记住上次检查的位置
+    // 前回チェックした位置を static 変数で記憶
     static int last_checked_index = 0;
 
-    // 从上次检查的位置开始，遍历一圈描述符
+    // 前回チェックした位置から、ディスクリプタを一周走査
     int i = last_checked_index;
     uint32_t checked_count = 0;
 
@@ -759,78 +759,78 @@ void process_descriptors(s2mm_dma_t *dma) {
         uint8_t *desc = s2mm_desc_base + i * dma->desc_size;
         uint32_t status = *(uint32_t *)(desc + STATUS_OFFSET);
 
-        // 如果描述符已完成且未处理
+        // ディスクリプタが完了済みかつ未処理なら
         if ((status & STATUS_COMPLETED) && !dma->desc_status[i].processed) {
-            // 更新描述符状态
+            // ディスクリプタの状態を更新
             dma->desc_status[i].status = status;
-            dma->desc_status[i].bytes_received = status & 0x3FFFFFF; // 提取接收到的字节数
+            dma->desc_status[i].bytes_received = status & 0x3FFFFFF; // 受信したバイト数を取り出す
             dma->desc_status[i].is_sof = (status & STATUS_RXSOF) ? 1 : 0;
             dma->desc_status[i].is_eof = (status & STATUS_RXEOF) ? 1 : 0;
 
-            // 检查SOF标志
+            // SOF フラグを確認
             if (dma->desc_status[i].is_sof) {
                 sof_index = i;
             }
 
-            // 检查EOF标志
+            // EOF フラグを確認
             if (dma->desc_status[i].is_eof && sof_index >= 0) {
                 eof_index = i;
                 found_frame = 1;
-                // 更新下一次开始检查的位置为EOF之后的描述符
+                // 次回チェック開始位置を EOF の次のディスクリプタに更新
                 last_checked_index = (i + 1) % dma->desc_count;
                 break;
             }
         }
 
-        // 移动到下一个描述符
+        // 次のディスクリプタへ移動
         i = (i + 1) % dma->desc_count;
         checked_count++;
     }
 
-    // 如果找到完整的帧
+    // 完全なフレームが見つかった場合
     if (found_frame) {
         size_t frame_size = 0;
         void *frame_buffer = NULL;
 
-        // 计算帧大小
+        // フレームサイズを計算
         if (sof_index <= eof_index || (sof_index > eof_index && sof_index > last_checked_index)) {
-            // 帧在连续的描述符中，或者SOF在环形缓冲区的后半部分
+            // フレームが連続したディスクリプタ内にある、または SOF がリングバッファの後半にある
             int start = sof_index;
             int end = eof_index;
 
             if (sof_index > eof_index) {
-                // 帧跨越了环形缓冲区的边界
+                // フレームがリングバッファの境界をまたいでいる
                 end = eof_index + dma->desc_count;
             }
 
-            // 计算总帧大小
+            // フレームの合計サイズを計算
             for (int j = start; j <= end; j++) {
                 int idx = j % dma->desc_count;
                 frame_size += dma->desc_status[idx].bytes_received;
             }
 
-            // 分配帧缓冲区
+            // フレームバッファを確保
             frame_buffer = malloc(frame_size);
             if (!frame_buffer) {
                 perror("Failed to allocate frame buffer");
                 return;
             }
 
-            // 从C2H设备读取数据
+            // C2H デバイスからデータを読み出す
             size_t offset = 0;
             for (int j = start; j <= end; j++) {
                 int idx = j % dma->desc_count;
                 size_t bytes = dma->desc_status[idx].bytes_received;
                 off_t device_offset = idx * dma->segment_size;
 
-                // 使用lseek设置读取位置
+                // lseek で読み出し位置を設定
                 if (lseek(dma->data_fd, device_offset, SEEK_SET) == -1) {
                     perror("Failed to seek in C2H device");
                     free(frame_buffer);
                     return;
                 }
 
-                // 从设备读取数据
+                // デバイスからデータを読み出す
                 ssize_t bytes_read = 0;
                 size_t total_read = 0;
 
@@ -847,57 +847,57 @@ void process_descriptors(s2mm_dma_t *dma) {
 
                 offset += bytes;
 
-                // 标记描述符为已处理
+                // ディスクリプタを処理済みにマーク
                 dma->desc_status[idx].processed = 1;
             }
         }
 
-        // 提交工作项到队列
+        // ワーク項目をキューに投入
         dma->frame_count++;
         enqueue_work(&dma->work_queue, frame_buffer, frame_size, dma->frame_count);
         printf("Enqueued frame %d, size: %zu bytes (SOF: %d, EOF: %d)\n",
                dma->frame_count, frame_size, sof_index, eof_index);
     } else if (checked_count >= dma->desc_count) {
-        // 如果检查了所有描述符但没有找到完整的帧，重置检查位置
-        // 这可以防止在异常情况下卡住
+        // すべてのディスクリプタを確認しても完全なフレームが見つからなければ、チェック位置をリセット
+        // これにより異常時に処理が詰まるのを防げる
         last_checked_index = 0;
     }
 }
 
-// 中断处理线程启动
-// MM2S中断处理线程
+// 割り込み処理スレッドを起動
+// MM2S 割り込み処理スレッド
 
-// S2MM中断处理线程
+// S2MM 割り込み処理スレッド
 void *s2mm_event_handler_thread(void *arg) {
     s2mm_dma_t *dma = (s2mm_dma_t *)arg;
     uint32_t event_data;
     struct pollfd fds[1];
     
-    // 设置poll结构
+    // poll 構造体を設定
     fds[0].fd = dma->event_fd;
     fds[0].events = POLLIN;
     
     printf("S2MM中断处理线程启动, 使用POLL模式等待中断\n");
     
     while (dma->running) {
-        // 使用poll等待事件，超时时间设为100ms
+        // poll でイベントを待つ。タイムアウトは 100ms
         int ret = poll(fds, 1, 100);
 
         if (ret < 0) {
-            // 出错处理
+            // エラー処理
             if (errno == EINTR) {
-                continue;  // 被信号中断，继续循环
+                continue;  // シグナルで中断された。ループを継続
             }
             perror("S2MM poll error");
             break;
         } else if (ret == 0) {
-            // 超时，继续循环
+            // タイムアウト。ループを継続
             continue;
         }
         
-        // 检查是否有可读事件
+        // 読み取り可能なイベントがあるか確認
         if (fds[0].revents & POLLIN) {
-            // 读取事件数据
+            // イベントデータを読み出す
             ssize_t bytes_read = read(dma->event_fd, &event_data, sizeof(event_data));
             if (bytes_read <= 0) {
                 if (errno == EAGAIN || errno == EINTR) {
@@ -909,29 +909,29 @@ void *s2mm_event_handler_thread(void *arg) {
             
             //printf("Received s2mm interrupt event: 0x%08x\n", event_data);
             
-            // 检查DMA状态
+            // DMA の状態を確認
             uint32_t dmasr = *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_DMASR);
             
-            // 清除中断标志
+            // 割り込みフラグをクリア
             if (dmasr & DMASR_IOC_IRQ) {
                 *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_DMASR) = DMASR_IOC_IRQ;
                 printf("IOC interrupt cleared\n");
                 
-                // 处理描述符
+                // ディスクリプタを処理
                 process_descriptors(dma);
             }
             
-            // 处理错误中断
+            // エラー割り込みを処理
             if (dmasr & DMASR_ERR_IRQ) {
                 *(volatile uint32_t *)((uint8_t *)dma->dma_regs + S2MM_DMASR) = DMASR_ERR_IRQ;
                 printf("Error s2mm interrupt received, DMA status: 0x%08x\n", dmasr);
                 
-                // 如果发生错误，可以选择是否停止DMA
-                // 在这里我们选择继续运行，只记录错误
+                // エラーが発生した場合、DMA を停止するかどうかを選べる
+                // ここでは実行を継続し、エラーを記録するだけにする
             }
         }
         
-        // 检查错误事件
+        // エラーイベントを確認
         if (fds[0].revents & (POLLERR | POLLHUP | POLLNVAL)) {
             printf("S2MM poll error event: 0x%x\n", fds[0].revents);
             break;
@@ -941,7 +941,7 @@ void *s2mm_event_handler_thread(void *arg) {
     return NULL;
 }
 
-// 主函数
+// メイン関数
 int main(int argc, char *argv[]) {
     mm2s_dma_t mm2s_dma;
     s2mm_dma_t s2mm_dma;
@@ -954,10 +954,10 @@ int main(int argc, char *argv[]) {
    
 
 
-    // 检查输出目录是否存在
+    // 出力ディレクトリが存在するか確認
     struct stat st = {0};
     if (stat(argv[2], &st) == -1) {
-        // 目录不存在，创建它
+        // ディレクトリが存在しないので作成する
         if (mkdir(argv[2], 0755) == -1) {
             perror("Failed to create output directory");
             return 1;
@@ -969,14 +969,14 @@ int main(int argc, char *argv[]) {
     
 	//----printf("initial s2mm !\n");
 
-    //----// 初始化DMA
+    //----// DMA を初期化
     //----ret = init_s2mm_dma(&s2mm_dma, argv[2]);
     //----if (ret < 0) {
     //----    fprintf(stderr, "Failed to initialize S2MM DMA\n");
     //----    return 1;
     //----}
     //----
-    //----// 设置S2MM描述符
+    //----// S2MM ディスクリプタを設定
     //----ret = setup_s2mm_descriptors(&s2mm_dma);
     //----if (ret < 0) {
     //----    fprintf(stderr, "Failed to setup S2MM descriptors\n");
@@ -984,7 +984,7 @@ int main(int argc, char *argv[]) {
     //----    return 1;
     //----}
     //----
-    //----// 创建工作线程
+    //----// ワーカースレッドを作成
     //----ret = pthread_create(&s2mm_dma.worker_thread, NULL, worker_thread, &s2mm_dma);
     //----if (ret < 0) {
     //----    perror("Failed to create worker thread");
@@ -992,7 +992,7 @@ int main(int argc, char *argv[]) {
     //----    return 1;
     //----}
     //----
-    //----// 创建事件处理线程
+    //----// イベント処理スレッドを作成
     //----ret = pthread_create(&s2mm_dma.event_thread, NULL, s2mm_event_handler_thread, &s2mm_dma);
     //----if (ret < 0) {
     //----    perror("Failed to create event thread");
@@ -1002,7 +1002,7 @@ int main(int argc, char *argv[]) {
     //----    return 1;
     //----}
     //----
-    //----// 启动DMA传输
+    //----// DMA 転送を開始
     //----ret = start_s2mm_dma(&s2mm_dma);
     //----if (ret < 0) {
     //----    fprintf(stderr, "Failed to start S2MM DMA\n");
@@ -1018,14 +1018,14 @@ int main(int argc, char *argv[]) {
 
 
 
-    // 初始化MM2S DMA
+    // MM2S DMA を初期化
     ret = init_mm2s_dma(&mm2s_dma, argv[1]);
     if (ret < 0) {
         fprintf(stderr, "Failed to initialize DMA\n");
         return 1;
     }
     
-    // 加载文件到缓冲区
+    // ファイルをバッファにロード
     ret = load_file_to_buffer(&mm2s_dma, argv[1]);
     if (ret < 0) {
         fprintf(stderr, "Failed to load file to buffer\n");
@@ -1033,21 +1033,21 @@ int main(int argc, char *argv[]) {
     }
     
 	printf("setup mm2s descriptors!\n");
-    // 设置MM2S描述符
+    // MM2S ディスクリプタを設定
     ret = setup_mm2s_descriptors(&mm2s_dma);
     if (ret < 0) {
         fprintf(stderr, "Failed to setup MM2S descriptors\n");
         return 1;
     }
     
-    // 创建事件处理线程
+    // イベント処理スレッドを作成
     ret = pthread_create(&mm2s_dma.event_thread, NULL, mm2s_event_handler_thread, &mm2s_dma);
     if (ret < 0) {
         perror("Failed to create event thread");
         return 1;
     }
     
-    // 启动DMA传输
+    // DMA 転送を開始
     ret = start_mm2s_dma(&mm2s_dma);
     if (ret < 0) {
         fprintf(stderr, "Failed to start MM2S DMA\n");
@@ -1062,7 +1062,7 @@ int main(int argc, char *argv[]) {
     //	printf("  - 内部错误: %s\n", (status & 0x10000000) ? "有错误" : "无错误");
     //	printf("  - 实际传输长度: %u 字节\n", status & 0x3FFFFFF);
 	//}
-    // 等待事件处理线程结束
+    // イベント処理スレッドの終了を待つ
     pthread_join(mm2s_dma.event_thread, NULL);
     printf("MM2S DMA is done. \n");
 
@@ -1073,23 +1073,23 @@ int main(int argc, char *argv[]) {
 
 
     
-    //----// 停止DMA
+    //----// DMA を停止
     //----s2mm_dma.running = 0;
     //----
-    //----// 停止DMA控制器
+    //----// DMA コントローラを停止
     //----uint32_t dmacr = *(volatile uint32_t *)((uint8_t *)s2mm_dma.dma_regs + S2MM_DMACR);
     //----dmacr &= ~DMACR_RS;
     //----*(volatile uint32_t *)((uint8_t *)s2mm_dma.dma_regs + S2MM_DMACR) = dmacr;
     //----
     //----printf("waiting s2mm dma done ..... \n");
-    //----// 等待线程结束
+    //----// スレッドの終了を待つ
     //----pthread_join(s2mm_dma.event_thread, NULL);
     //----pthread_join(s2mm_dma.worker_thread, NULL);
     //----
-    //----// 清理资源
+    //----// リソースを後片付け
     //----cleanup_s2mm_dma(&s2mm_dma);
 
-    // mm2s清理资源
+    // mm2s のリソースを後片付け
     if (mm2s_dma.buffer) {
         free(mm2s_dma.buffer);
     }
@@ -1107,9 +1107,9 @@ int main(int argc, char *argv[]) {
 
 
 /**
- * 打印MM2S DMA控制器的寄存器和描述符信息
- * @param mm2s_dma MM2S DMA控制器结构体指针
- * @param verbose 是否打印详细信息
+ * MM2S DMA コントローラのレジスタとディスクリプタ情報を表示
+ * @param mm2s_dma MM2S DMA コントローラ構造体へのポインタ
+ * @param verbose 詳細情報を表示するかどうか
  */
 void print_mm2s_dma_registers(mm2s_dma_t *mm2s_dma)
 {
@@ -1128,7 +1128,7 @@ void print_mm2s_dma_registers(mm2s_dma_t *mm2s_dma)
 
     printf("\n===== MM2S DMA寄存器状态 =====\n");
 
-    // 控制寄存器 (MM2S_DMACR, 0x00)
+    // 制御レジスタ (MM2S_DMACR, 0x00)
     uint32_t dmacr = dma_regs[0x00/4];
     printf("MM2S控制寄存器(0x00): 0x%08x\n", dmacr);
     printf("  - 运行状态: %s\n", (dmacr & 0x1) ? "启用" : "禁用");
@@ -1141,7 +1141,7 @@ void print_mm2s_dma_registers(mm2s_dma_t *mm2s_dma)
     printf("  - IRQThreshold: %u\n", (dmacr >> 16) & 0xFF);
     printf("  - IRQDelay: %u\n", (dmacr >> 24) & 0xFF);
 
-    // 状态寄存器 (MM2S_DMASR, 0x04)
+    // ステータスレジスタ (MM2S_DMASR, 0x04)
     uint32_t dmasr = dma_regs[0x04/4];
     printf("MM2S状态寄存器(0x04): 0x%08x\n", dmasr);
     printf("  - DMA引擎状态: %s\n", (dmasr & 0x1) ? "停止" : "运行中");
@@ -1158,18 +1158,18 @@ void print_mm2s_dma_registers(mm2s_dma_t *mm2s_dma)
     printf("  - IRQThresholdStatus: %u\n", (dmasr >> 16) & 0xFF);
     printf("  - IRQDelayStatus: %u\n", (dmasr >> 24) & 0xFF);
 
-    // 当前描述符地址
+    // カレントディスクリプタアドレス
     printf("MM2S当前描述符地址(0x0C+0x08): 0x%08x%08x\n", dma_regs[0x0C/4], dma_regs[0x08/4]);
-    // 尾描述符地址
+    // テールディスクリプタアドレス
     printf("MM2S最尾描述符地址(0x14+0x10): 0x%08x%08x\n", dma_regs[0x14/4], dma_regs[0x10/4]);
 
-    // 描述符信息
+    // ディスクリプタ情報
     if (desc_base) {
         if (mm2s_dma->desc_count > 1) {
             printf("\n===== MM2S描述符 =====\n");
             //for (uint32_t i = 1; i < dma->desc_count; i++) {
             for (uint32_t i = 0; i < 3; i++) {
-                volatile uint32_t *next_desc = desc_base + (i * 16); // 假设每个描述符占8个32位字
+                volatile uint32_t *next_desc = desc_base + (i * 16); // 各ディスクリプタが 32 ビットワード 8 個分を占めると仮定
                 printf("描述符 #%d 地址: %p\n", i, (void*)next_desc);
                 printf("  [0] 第%d的下一个描述符地址: 0x%08x%08x\n",i,next_desc[1], next_desc[0]);
                 printf("  [1] 第%d的下一个缓冲区地址: 0x%08x%08x\n",i, next_desc[3], next_desc[2]);
@@ -1211,7 +1211,7 @@ void print_s2mm_dma_registers(s2mm_dma_t *dma)
 
     printf("\n===== S2MM DMA寄存器状态 =====\n");
 
-    // 控制寄存器 (S2MM_DMACR, 0x00)
+    // 制御レジスタ (S2MM_DMACR, 0x00)
     uint32_t dmacr = dma_regs[0x30/4];
     printf("S2MM控制寄存器(0x30): 0x%08x\n", dmacr);
     printf("  - 运行状态: %s\n", (dmacr & 0x1) ? "启用" : "禁用");
@@ -1224,7 +1224,7 @@ void print_s2mm_dma_registers(s2mm_dma_t *dma)
     printf("  - IRQThreshold: %u\n", (dmacr >> 16) & 0xFF);
     printf("  - IRQDelay: %u\n", (dmacr >> 24) & 0xFF);
 
-    // 状态寄存器 (S2MM_DMASR, 0x04)
+    // ステータスレジスタ (S2MM_DMASR, 0x04)
     uint32_t dmasr = dma_regs[0x34/4];
     printf("S2MM状态寄存器(0x34): 0x%08x\n", dmasr);
     printf("  - DMA引擎状态: %s\n", (dmasr & 0x1) ? "停止" : "运行中");
@@ -1241,19 +1241,19 @@ void print_s2mm_dma_registers(s2mm_dma_t *dma)
     printf("  - IRQThresholdStatus: %u\n", (dmasr >> 16) & 0xFF);
     printf("  - IRQDelayStatus: %u\n", (dmasr >> 24) & 0xFF);
 
-    // 当前描述符地址
+    // カレントディスクリプタアドレス
     printf("MM2S当前描述符地址(0x3C+0x38): 0x%08x%08x\n", dma_regs[0x3C/4], dma_regs[0x38/4]);
-    // 尾描述符地址
+    // テールディスクリプタアドレス
     printf("MM2S最尾描述符地址(0x44+0x40): 0x%08x%08x\n", dma_regs[0x44/4], dma_regs[0x40/4]);
 
 
-    // 描述符信息
+    // ディスクリプタ情報
     if (desc_base) {
         if (dma->desc_count > 1) {
             printf("\n===== S2MM描述符 =====\n");
             //for (uint32_t i = 1; i < dma->desc_count; i++) {
             for (uint32_t i = 0; i < 3; i++) {
-                volatile uint32_t *next_desc = desc_base + (i * 16); // 假设每个描述符占8个32位字
+                volatile uint32_t *next_desc = desc_base + (i * 16); // 各ディスクリプタが 32 ビットワード 8 個分を占めると仮定
                 printf("描述符 #%d 地址: %p\n", i, (void*)next_desc);
                 printf("  [0] 第%d的下一个描述符地址: 0x%08x%08x\n",i,next_desc[1], next_desc[0]);
                 printf("  [1] 第%d的下一个缓冲区地址: 0x%08x%08x\n",i, next_desc[3], next_desc[2]);
@@ -1287,7 +1287,7 @@ void print_mm2s_descriptor(volatile uint32_t *desc_ptr)
     printf("\n===== 描述符 =======\n");
     printf("描述符地址: %p\n", (void*)desc_ptr);
 
-    // 下一描述符地址
+    // 次のディスクリプタアドレス
     uint32_t next_desc_lo = desc_ptr[0];
     uint32_t next_desc_hi = desc_ptr[1];
     printf("下一描述符地址: 0x%08x%08x\n", next_desc_hi, next_desc_lo);
@@ -1295,34 +1295,34 @@ void print_mm2s_descriptor(volatile uint32_t *desc_ptr)
         printf("  (这是链表中的最后一个描述符)\n");
     }
 
-    // 缓冲区地址
+    // バッファアドレス
     uint32_t buffer_addr_lo = desc_ptr[2];
     uint32_t buffer_addr_hi = desc_ptr[3];
     printf("缓冲区地址: 0x%08x%08x\n", buffer_addr_hi, buffer_addr_lo);
 
-    // 控制字
+    // 制御ワード
     uint32_t control = desc_ptr[6];
     printf("控制字: 0x%08x\n", control);
     printf("  - 缓冲区长度: %u 字节\n", control & 0x3FFFFFF);
 
-    // 控制位
+    // 制御ビット
     if (control & 0x8000000) printf("  - SOP: 是 (包起始)\n");
     if (control & 0x4000000) printf("  - EOP: 是 (包结束)\n");
 
-    // 状态字
+    // ステータスワード
     uint32_t status = desc_ptr[7];
     printf("状态字: 0x%08x\n", status);
 
-    // 状态位
+    // ステータスビット
     printf("  - 完成状态: %s\n", (status & 0x80000000) ? "已完成" : "未完成");
 
-    if (status & 0x80000000) {  // 如果已完成，显示更多状态信息
+    if (status & 0x80000000) {  // 完了していれば、さらに詳しいステータス情報を表示
         printf("  - 解码错误: %s\n", (status & 0x40000000) ? "有错误" : "无错误");
         printf("  - 从属错误: %s\n", (status & 0x20000000) ? "有错误" : "无错误");
         printf("  - 内部错误: %s\n", (status & 0x10000000) ? "有错误" : "无错误");
         printf("  - 实际传输长度: %u 字节\n", status & 0x3FFFFFF);
 
-        // 检查传输长度是否与请求长度匹配
+        // 転送長が要求長と一致するか確認
         uint32_t requested_len = control & 0x3FFFFFF;
         uint32_t actual_len = status & 0x3FFFFFF;
 
@@ -1332,10 +1332,10 @@ void print_mm2s_descriptor(volatile uint32_t *desc_ptr)
         }
     }
 
-    // 应用数据（通常用于用户自定义数据）
+    // アプリケーションデータ（通常はユーザー定義データに使用）
     printf("应用数据: 0x%08x\n", desc_ptr[7]);
 
-    // 额外的调试信息：计算描述符的物理地址
+    // 追加のデバッグ情報：ディスクリプタの物理アドレスを計算
     printf("描述符物理地址估计: 0x%lx\n",
-           (uintptr_t)desc_ptr & 0xFFFFFFFFFFFFF000UL);  // 假设页对齐
+           (uintptr_t)desc_ptr & 0xFFFFFFFFFFFFF000UL);  // ページアラインを仮定
 }

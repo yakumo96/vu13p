@@ -11,10 +11,10 @@ module fir_regcfg
     input  wire [ 8-1:0]         wb_adr   ,   // ADR_O() address
     output wire [16-1:0]         wb_rd_dat,   // DAT_I() data in
     input  wire [16-1:0]         wb_wr_dat,   // DAT_O() data out
-    input  wire                  wb_we    ,   // 写使能信号，代表主设备对从设备当前进行的操作，1为写，0为读
-    input  wire [ 2-1:0]         wb_sel   ,   // SEL_O() select output,数据总线选择信号，也是字节选择信号，以Byte为单位，SEL(4’b 1001)代表最高和最低字节有效
-    input  wire                  wb_stb   ,   // STB_O strobe output,选通信号，选通信号有效代表主设备发起一次总线操作
-    output wire                  wb_ack   ,   // ACK_I acknowledge input 主从设备间的操作成功结束信号
+    input  wire                  wb_we    ,   // 書き込みイネーブル信号。マスタがスレーブに対して現在行う操作を表す。1 が書き込み、0 が読み出し
+    input  wire [ 2-1:0]         wb_sel   ,   // SEL_O() select output, データバス選択信号。バイト選択信号でもあり、Byte 単位。SEL(4’b 1001) は最上位と最下位のバイトが有効であることを表す
+    input  wire                  wb_stb   ,   // STB_O strobe output, ストローブ信号。ストローブ信号が有効になると、マスタが 1 回のバス操作を開始したことを表す
+    output wire                  wb_ack   ,   // ACK_I acknowledge input マスタ・スレーブ間の操作が正常に完了したことを示す信号
     output wire                  wb_err   ,   // ERR_I error input
     input  wire                  wb_cyc   ,   // CYC_O cycle output
 

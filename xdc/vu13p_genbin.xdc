@@ -5,7 +5,7 @@ set_property BITSTREAM.CONFIG.CONFIGRATE 85.0 [current_design]
 set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 4 [current_design]
 set_property BITSTREAM.CONFIG.SPI_FALL_EDGE Yes [current_design]
 
-# PCIe 请选择 tandem Pcie
+# PCIe の場合は tandem Pcie を選択してください
 #
 #set bscan_cells [get_cells -hierarchical -filter {PRIMITIVE_TYPE =~ CONFIGURATION.BSCAN.*}]
 #set_property HD.TANDEM_IP_PBLOCK Stage1_Main $bscan_cells

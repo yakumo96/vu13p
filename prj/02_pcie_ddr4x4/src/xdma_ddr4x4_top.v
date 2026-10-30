@@ -81,7 +81,7 @@ module xdma_ddr4x4_top (
 );
 
 
-//log by masw@masw.tech : 可以直接调用BD文件
+//log by masw@masw.tech : BD ファイルを直接呼び出せる
 xdma_ddr4x4 xdma_ddr4x4_i (
 	.c0_ddr4_act_n        (c0_ddr4_act_n         ),
 	.c0_ddr4_adr          (c0_ddr4_adr           ),

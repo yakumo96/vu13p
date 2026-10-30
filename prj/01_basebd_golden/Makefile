@@ -11,7 +11,7 @@ PRJTCL   := ../common/processing.tcl
 
 TARGET_NAME := $(TOP_NAME)
 GBIT_FNAME  := $(TOP_NAME)_$(PRJTAG).bit
-MCS_SADDR   ?= 0x00000000#MCS固件的起始地址
+MCS_SADDR   ?= 0x00000000#MCS ファームウェアの開始アドレス
 
 
 	

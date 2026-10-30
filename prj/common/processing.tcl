@@ -1,9 +1,9 @@
-# 获取环境变量并返回的函数, 需要判断这个量有没有()，如果没有则报错推出
+# 環境変数を取得して返す関数。その変数が存在するかを判定し、存在しなければエラーを出して終了する
 proc get_env {name} {
-    # 增加允许 环境变量为空的情况 
+    # 環境変数が空の場合も許容するケースを追加 
     if {[info exists ::env($name)]} {
 		set retx $::env($name)
-		regsub {\s+$} $retx "" retx;# 删除变量中的最后几个空格
+		regsub {\s+$} $retx "" retx;# 変数末尾の空白を削除
         return $retx
     } else {
         puts "Error: Environment variable $name not found. VIVADO 要退出了"
@@ -16,9 +16,9 @@ proc get_abspath {name} {
 }
 
 proc load_project {} {
-    # 从makefile的 export 出来的环境变量中获取参数。需要判断这个量有没有，如果没有则报错推出
-    # 需要获取的参数有 outdir top_name part ,注意环境变量统一带 MKENV_ 前缀
-    # 使用get_env函数获取环境变量
+    # makefile で export された環境変数からパラメータを取得する。その変数が存在するかを判定し、存在しなければエラーを出して終了する
+    # 取得するパラメータは outdir top_name part。環境変数には一律で MKENV_ プレフィックスが付く点に注意
+    # get_env 関数で環境変数を取得
     set outdir   [get_env MKENV_OUTDIR]
     set top_name [get_env MKENV_TOP_NAME]
     set part     [get_env MKENV_PART]
@@ -41,9 +41,9 @@ proc load_project {} {
 }
 
 
-# 添加文件到工程， 并更新
+# ファイルをプロジェクトに追加し、更新する
 proc add_filex {} {
-    # 添加文件
+    # ファイルを追加
     set outdir    [get_env MKENV_OUTDIR]
     set top_name  [get_env MKENV_TOP_NAME]
     set part      [get_env MKENV_PART]
@@ -59,7 +59,7 @@ proc add_filex {} {
     set USE_OOC_SYNTHESIS [get_env MKENV_USE_OOC_SYNTHESIS]
     set USE_INCR_COMP     [get_env MKENV_USE_INCR_COMP]
 
-    # 添加仓库 DEPS_LIB 
+    # リポジトリ DEPS_LIB を追加 
     if {$DEPS_LIB ne ""} {
 		set liblist {}
 		foreach filex $DEPS_LIB {
@@ -71,10 +71,10 @@ proc add_filex {} {
         update_ip_catalog
     }
 
-	# 遍历每个路径
+	# 各パスを走査
     if {$PATHS_RTL ne ""} {
 		foreach path $PATHS_RTL {
-			# 获取路径中的所有 .v, .sv, .vhdl 文件
+			# パス内のすべての .v, .sv, .vhdl ファイルを取得
 			set absolutePath [file normalize $path]
 			#set rtl_files [glob -nocomplain -directory $absolutePath *.{v,sv,vhdl}]
 			#add_files -norecurse -fileset sources_1 $rtl_files
@@ -86,9 +86,9 @@ proc add_filex {} {
 			if {$rtl_files ne "" } {read_vhdl        $rtl_files}
 		}
 	}
-    # 添加RTL文件
+    # RTL ファイルを追加
     if {$FILES_RTL ne ""} {
-        # 这里需要写一个for循环逐个添加文件， 判断工程中是否已经存在这个文件，如果存在则不添加
+        # for ループで 1 ファイルずつ追加し、プロジェクトに同じファイルが既に存在するかを判定、存在すれば追加しない
 		foreach filex $FILES_RTL {
 			set absolutefile [file normalize $filex]
         	add_files -norecurse -fileset sources_1 $absolutefile 
@@ -96,7 +96,7 @@ proc add_filex {} {
     }
 
 
-    # 添加宏定义文件 FILE_DEF  并指定为globel define verilg header 首先需要判断 DEF 是否为空
+    # マクロ定義ファイル FILE_DEF を追加し、global define verilog header に指定する。まず DEF が空かどうかを判定する
     if {$FILES_DEF ne ""} {
 		foreach filex $FILES_DEF {
 			set absolutefile [file normalize $filex]
@@ -106,7 +106,7 @@ proc add_filex {} {
             set_property is_global_include true     [get_files $absolutefile ]
         }
     }
-    # 添加TCL文件
+    # TCL ファイルを追加
     if {$FILES_TCL ne ""} {
 		foreach filex $FILES_TCL {
 			set absolutefile [file normalize $filex]
@@ -114,7 +114,7 @@ proc add_filex {} {
         	source $absolutefile 
 		}
     }
-    # 添加约束文件
+    # 制約ファイルを追加
     if {$FILES_XDC ne ""} {
 		foreach filex $FILES_XDC {
 			set absolutefile [file normalize $filex]
@@ -122,52 +122,52 @@ proc add_filex {} {
         	read_xdc $absolutefile 
 		}
     }
-    # 添加BD文件
+    # BD ファイルを追加
     set project_bd_dir "$outdir/$top_name/$top_name.srcs/sources_1/bd/system"
     if {$FILES_BD ne ""} {
-        # 如果 get_bd_define base 为空，则创建，否则加载
+        # get_bd_define base が空なら作成し、そうでなければ読み込む
 		#set tmp [get_bd_designs base]
         #if {$tmp eq ""} {
         #    create_bd_design -name base
         #}
         source $FILES_BD
         #create_root_design base
-        # 保存BD文件 和 校验 
+        # BD ファイルを保存して検証 
         #save_bd_design
         #validate_bd_design
     }
 	#puts "=====================debug 2=============="
-    # 添加仿真文件
+    # シミュレーションファイルを追加
     if {$FILES_SIM ne ""} {
 		foreach filex $FILES_SIM {
 			set absolutefile [file normalize $filex]
 			puts "add file $absolutefile "
         	add_files -norecurse -fileset sim_1 $absolutefile 
 		}
-        # 如果 files_sim里 有 tb.v 则设置为仿真的 top
+        # files_sim に tb.v があれば、シミュレーションの top に設定
         if {[regexp {tb.v} $FILES_SIM]} {
             set_property top tb [get_fileset sim_1]
         }
     }
 	#puts "=====================debug 4=============="
     update_compile_order -fileset sources_1
-    set_property top $top_name [current_fileset];# 配置top
+    set_property top $top_name [current_fileset];# top を設定
     update_compile_order -fileset sources_1
     update_compile_order -fileset constrs_1
     update_compile_order -fileset sim_1
-    # 添加BD文件，如果有的话
+    # BD ファイルがあれば追加
 }
 # 
 
-# 创建工作流
-# 在创建好工程并且加载了必须的文件之后，分别编写以下几个函数来创建工作流
-# 1. 创建lint检查工作流，检查RTL代码的规范性。如果代码结构有问题，则不再继续后续的工作流
-# 2. 创建仿真工作流，默认使用Vivado自带的仿真工具进行仿真
-# 3. 创建综合工作流，综合工作流需要指定综合的目标设备
-# 4. 创建实现工作流，实现工作流需要指定实现的目标设备
-# 5. 创建打包工作流，打包工作流需要指定打包的目标设备
-# 6. 创建生成bit文件工作流，生成bit文件工作流需要指定生成的目标设备
-# 7. 创建生成boot文件工作流，生成boot文件工作流需要指定生成的目标设备
+# ワークフローを作成
+# プロジェクトを作成して必要なファイルを読み込んだ後、以下の関数をそれぞれ記述してワークフローを作成する
+# 1. lint チェックのワークフローを作成し、RTL コードの規約準拠をチェックする。コード構造に問題があれば、以降のワークフローは実行しない
+# 2. シミュレーションのワークフローを作成する。デフォルトでは Vivado 付属のシミュレータでシミュレーションする
+# 3. 合成のワークフローを作成する。合成ワークフローでは合成のターゲットデバイスを指定する必要がある
+# 4. インプリメンテーションのワークフローを作成する。ターゲットデバイスを指定する必要がある
+# 5. パッケージングのワークフローを作成する。ターゲットデバイスを指定する必要がある
+# 6. bit ファイル生成のワークフローを作成する。ターゲットデバイスを指定する必要がある
+# 7. boot ファイル生成のワークフローを作成する。ターゲットデバイスを指定する必要がある
 
 proc lint_flow {} {
     set part       [get_env MKENV_PART]
@@ -204,7 +204,7 @@ proc synth_flow {} {
     open_run synth_1
 	 
     report_timing_summary -file ${project_dir}/timing_synth.log
-    #生成 dcp文件，用于后续的实现
+    #後続のインプリメンテーションで使う dcp ファイルを生成
     write_checkpoint -force ${project_dir}/${top_name}_synth.dcp
 }
 
@@ -215,7 +215,7 @@ proc impl_flow {} {
     set top_name         [get_env MKENV_TOP_NAME]
 	set project_dir      [file normalize ${outdir}/${top_name}/${top_name}.data]
 
-    # 如果有dcp文件，则使用增量编译
+    # dcp ファイルがあればインクリメンタルコンパイルを使用
     reset_run impl_1
     launch_runs -jobs ${MAX_OOC_JOBS} impl_1 
     wait_on_run impl_1 
@@ -231,9 +231,9 @@ proc genbit_flow {} {
     set top_name         [get_env MKENV_TOP_NAME]
 	set project_dir      [file normalize ${outdir}/${top_name}/${top_name}.data]
 
-    # 如果有dcp文件，则使用增量编译
+    # dcp ファイルがあればインクリメンタルコンパイルを使用
     open_run impl_1
-    # 生成加上时间戳和当前linux用户名的bit文件，预先set 时间和用户名变量, 时间精准到分钟
+    # タイムスタンプと現在の Linux ユーザー名を付けた bit ファイルを生成する。時刻とユーザー名の変数を事前に set する。時刻は分単位
     set username  [exec whoami]
     set prjtag    [get_env MKENV_PRJTAG]
     write_bitstream -force ${project_dir}/${top_name}_${prjtag}.bit
@@ -313,7 +313,7 @@ proc downloadbit {argv} {
 	refresh_hw_device -update_hw_probes false [lindex [get_hw_devices ${HWTARGET}] 0]
 	#program_hw_devices -file $bitname 
 	if {[llength $argv] > 2} {
-		# 如果参数长度大于 2，将第三个参数赋值给变量
+		# 引数の数が 2 より大きければ、3 番目の引数を変数に代入
 		set ltxname [lindex $argv 2] 
 		set_property PROBES.FILE ${ltxname} [get_hw_devices ${HWTARGET}]
 	} else {
@@ -340,7 +340,7 @@ proc genbitonly {argv} {
 
 set function_name [lindex $argv 0]
 
-# 调用指定的函数
+# 指定された関数を呼び出す
 if {[info commands $function_name] != ""} {
     eval $function_name {$argv}
 } else {

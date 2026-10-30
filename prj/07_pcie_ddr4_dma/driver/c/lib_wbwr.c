@@ -20,15 +20,15 @@ void Initialization_IIC(UINTPTR baseaddr)
 	printf("Initialization_IIC Device finished.\n\r");
 }
 
-// 定义wishbone读写函数。
-// 读函数
-// 将数据buffer写入TX_FIFO
-// 寄存器	值	说明
-// TX_FIFO	000001A0	写控制字 + START
-// TX_FIFO	00000000	地址8位
-// TX_FIFO	000001A1	读控制字 + RSTART
-// TX_FIFO	00000205	读数据数量 + STOP
-// CR	00000025	启动发送
+// wishbone の読み書き関数を定義する。
+// 読み出し関数
+// データ buffer を TX_FIFO に書き込む
+// レジスタ	値	説明
+// TX_FIFO	000001A0	書き込み制御ワード + START
+// TX_FIFO	00000000	アドレス 8 ビット
+// TX_FIFO	000001A1	読み出し制御ワード + RSTART
+// TX_FIFO	00000205	読み出しデータ数 + STOP
+// CR	00000025	送信開始
 
 int wishbone_read(UINTPTR baseaddr, u8 iicaddr, u8 regaddr, u16 *readback)
 {
@@ -38,14 +38,14 @@ int wishbone_read(UINTPTR baseaddr, u8 iicaddr, u8 regaddr, u16 *readback)
 	for(i = 0; i < 16; i++)
 		buffer[i] = 0;
 
-	// TX_FIFO的地址为 baseaddr + 0x108 
-	// 写入fifo前先清空FIFO
-	// 1. 写入控制字 + START
-	// 2. 写入地址
-	// 3. 写入控制字 + RSTART
-	// 4. 写入读数据数量 + STOP
-	// 5. 启动发送
-	// 首先要清除相关寄存器
+	// TX_FIFO のアドレスは baseaddr + 0x108 
+	// fifo に書き込む前にまず FIFO をクリア
+	// 1. 制御ワード + START を書き込む
+	// 2. アドレスを書き込む
+	// 3. 制御ワード + RSTART を書き込む
+	// 4. 読み出しデータ数 + STOP を書き込む
+	// 5. 送信開始
+	// まず関連レジスタをクリアする
 	XIic_WriteReg(baseaddr, XIIC_CR_REG_OFFSET , 0x00000002);
 	XIic_WriteReg(baseaddr, XIIC_CR_REG_OFFSET , 0x00000000);
 		printf("-----clear OK SR = 0x%x------\n", XIic_ReadReg(baseaddr, XIIC_SR_REG_OFFSET) );
@@ -58,7 +58,7 @@ int wishbone_read(UINTPTR baseaddr, u8 iicaddr, u8 regaddr, u16 *readback)
 	XIic_WriteReg(baseaddr, XIIC_DTR_REG_OFFSET, 0x00000202);
 	XIic_WriteReg(baseaddr, XIIC_CR_REG_OFFSET , 0x00000025);
 		printf("-----set begin OK SR = 0x%x------\n", XIic_ReadReg(baseaddr, XIIC_SR_REG_OFFSET) );
-	// 启动后读取 SR寄存器，在10ms 内返回 0x80则退出，并返回成功。如果超时则返回失败。
+	// 起動後に SR レジスタを読み、10ms 以内に 0x80 が返れば抜けて成功を返す。タイムアウトした場合は失敗を返す。
 	int timeout = 0;
 	while (timeout < 50000)
 	{
@@ -69,7 +69,7 @@ int wishbone_read(UINTPTR baseaddr, u8 iicaddr, u8 regaddr, u16 *readback)
 		timeout++;
 	}
 	//if (timeout > 4)
-	//	return -1;//IIC 发送超时失败
+	//	return -1;//IIC 送信タイムアウトで失敗
 
 	printf("-----bus not busy SR = 0x%x------\n", XIic_ReadReg(baseaddr, XIIC_SR_REG_OFFSET) );
 	printf("-----bus not busy 0x114 = 0x%x------\n", XIic_ReadReg(baseaddr, 0x114) );
@@ -103,11 +103,11 @@ int wishbone_read(UINTPTR baseaddr, u8 iicaddr, u8 regaddr, u16 *readback)
 		printf("buffer[%d] = %x\n",i,buffer[i]);
 	readback[0] = buffer[0] | buffer[1] << 8;
 	//--if (timeout > 4)
-	//--	return -3;//IIC 发送超时失败
+	//--	return -3;//IIC 送信タイムアウトで失敗
 
 
 	//---//XIic_WriteReg(baseaddr, XIIC_CR_REG_OFFSET , 0x00000000);
-	//---//从RX FIFO 中读取2个数据，直到SR寄存器中RX_FIFO_EMPTY为1。
+	//---//RX FIFO からデータを 2 個読み出す。SR レジスタの RX_FIFO_EMPTY が 1 になるまで。
 	//---//int i = 0;
 	//---usleep(10000);
 	//---u16 lsb = XIic_ReadReg(baseaddr, XIIC_DRR_REG_OFFSET);
@@ -123,12 +123,12 @@ int wishbone_read(UINTPTR baseaddr, u8 iicaddr, u8 regaddr, u16 *readback)
 	//---//	//	break;
 	//---//}
 	//---//if (i == 16)
-	//---//	return -2; // 读取FIFO 失败
+	//---//	return -2; // FIFO の読み出しに失敗
 	//---//printf("timeout=%d ,i=%d,   ", timeout, i);
 	//---printf("buff[0]=%d ,  ", lsb);
 	//---printf("buff[1]=%d  \n", msb);
 	//---readback[0] = lsb | msb << 8;
-	// 结束后清空FIFO
+	// 終了後に FIFO をクリア
 	XIic_WriteReg(baseaddr, XIIC_CR_REG_OFFSET , 0x00000002);
 	XIic_WriteReg(baseaddr, XIIC_CR_REG_OFFSET , 0x00000000);
 	return 0;
@@ -139,8 +139,8 @@ int wishbone_write(UINTPTR baseaddr, u8 iicaddr, u8 regaddr, u16 *buffer)
 	XIic_WriteReg(baseaddr, XIIC_DTR_REG_OFFSET, 0x00000000 | regaddr);
 	XIic_WriteReg(baseaddr, XIIC_DTR_REG_OFFSET, 0x00000000 | buffer[0] >> 8);
 	XIic_WriteReg(baseaddr, XIIC_DTR_REG_OFFSET, 0x00000200 | buffer[0]);
-	XIic_WriteReg(baseaddr, XIIC_CR_REG_OFFSET , 0x0000000D); //启动发送
-	//接下来读取SR，判断TX_FIFO是否为空（0000_00C0）。同样采用超时机制，超时时间为10ms。
+	XIic_WriteReg(baseaddr, XIIC_CR_REG_OFFSET , 0x0000000D); //送信開始
+	//次に SR を読み、TX_FIFO が空（0000_00C0）かどうかを判定する。同様にタイムアウト機構を使い、タイムアウト時間は 10ms。
 	int timeout = 0;
 	while (timeout < 10)
 	{
@@ -150,8 +150,8 @@ int wishbone_write(UINTPTR baseaddr, u8 iicaddr, u8 regaddr, u16 *buffer)
 		timeout++;
 	}
 	if (timeout == 10)
-		return -1;//IIC 发送超时失败
-	// 结束后清空FIFO
+		return -1;//IIC 送信タイムアウトで失敗
+	// 終了後に FIFO をクリア
 	XIic_WriteReg(baseaddr, XIIC_CR_REG_OFFSET , 0x00000007);
 	XIic_WriteReg(baseaddr, XIIC_CR_REG_OFFSET , 0x00000005);
 

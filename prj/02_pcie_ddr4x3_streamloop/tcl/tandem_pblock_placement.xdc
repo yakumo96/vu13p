@@ -4,8 +4,8 @@
 set_property HD.TANDEM_IP_PBLOCK Stage1_Main      [get_cells dbg_hub]
 set_property HD.TANDEM_IP_PBLOCK Stage1_Main      [get_cells -hier -filter {(ORIG_REF_NAME == ICAPE3    || REF_NAME == ICAPE3   )}]
 set_property HD.TANDEM_IP_PBLOCK Stage1_Main      [get_cells -hier -filter {(ORIG_REF_NAME == STARTUPE3 || REF_NAME == STARTUPE3)}] 
-set_property HD.TANDEM_IP_PBLOCK Stage1_Main      [get_cells -hier ibufds_gte4_pcie_mgt_refclk_inst];# U+系列都需要这句话
-set_property HD.TANDEM_IP_PBLOCK Stage1_IO        [get_cells -hier pcie_perst_n_IBUF_inst/INBUF_INST];# U+系列都需要这句话
-#set_property HD.TANDEM_IP_PBLOCK Stage1_IO        [get_cells -hier pcie_link_up_OBUF_inst/ONBUF_INST];# 这个可要可不要
+set_property HD.TANDEM_IP_PBLOCK Stage1_Main      [get_cells -hier ibufds_gte4_pcie_mgt_refclk_inst];# U+ シリーズではすべてこの行が必要
+set_property HD.TANDEM_IP_PBLOCK Stage1_IO        [get_cells -hier pcie_perst_n_IBUF_inst/INBUF_INST];# U+ シリーズではすべてこの行が必要
+#set_property HD.TANDEM_IP_PBLOCK Stage1_IO        [get_cells -hier pcie_link_up_OBUF_inst/ONBUF_INST];# これはあってもなくてもよい
 
 

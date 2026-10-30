@@ -1,13 +1,13 @@
 //========================================================================
 //        author   : masw
 //        email    : masw@masw.tech     
-//        creattime: 2023年11月11日 星期六 22时55分33秒
+//        creattime: 2023年11月11日 土曜日 22時55分33秒
 //========================================================================
 
 
 /*
-思路：
-	1. 小包传输，一次传输 1024个byte
+方針：
+	1. 小パケット転送。1 回の転送で 1024 byte
   
 */
 
@@ -75,32 +75,32 @@ reg       s2mm_eof  ;
 reg       s2mm_incr ;
 reg [22:0]s2mm_lenx ;
 wire [71:0] MM2S_CMD = {
-	4'd0        ,//没啥用
-	4'd0        ,//TAG, 最终会流传到STS上，不用
-	mm2s_saddr  ,//SADDR, 起始地址
-	1'b0        ,//DRE重新对齐请求。	
-	mm2s_eof    ,//EOF标志, 永不停歇
-	6'd0        ,//DRE 流对齐
-	mm2s_incr   ,//传完后不做地址递增
-	mm2s_lenx    //一次传输65536个byte
+	4'd0        ,//特に用途なし
+	4'd0        ,//TAG, 最終的に STS に伝搬される。未使用
+	mm2s_saddr  ,//SADDR, 開始アドレス
+	1'b0        ,//DRE 再アライメント要求。	
+	mm2s_eof    ,//EOF フラグ, 止まらず流し続ける
+	6'd0        ,//DRE ストリームアライメント
+	mm2s_incr   ,//転送後にアドレスをインクリメントしない
+	mm2s_lenx    //1 回の転送で 65536 byte
 };
 
 wire [71:0] S2MM_CMD = {
-	4'd0        ,//没啥用
-	4'd0        ,//TAG, 最终会流传到STS上，不用
-	s2mm_saddr  ,//SADDR, 起始地址
-	1'b0        ,//DRE重新对齐请求。	
-	s2mm_eof    ,//EOF标志, 永不停歇
-	6'd0        ,//DRE 流对齐
-	s2mm_incr   ,//传完后不做地址递增
-	s2mm_lenx    //一次传输65536个byte
+	4'd0        ,//特に用途なし
+	4'd0        ,//TAG, 最終的に STS に伝搬される。未使用
+	s2mm_saddr  ,//SADDR, 開始アドレス
+	1'b0        ,//DRE 再アライメント要求。	
+	s2mm_eof    ,//EOF フラグ, 止まらず流し続ける
+	6'd0        ,//DRE ストリームアライメント
+	s2mm_incr   ,//転送後にアドレスをインクリメントしない
+	s2mm_lenx    //1 回の転送で 65536 byte
 };
 
 always @ (posedge axi_aclk or negedge axi_aresetn )
 	if(!axi_aresetn) begin
 		MM2S_CMD_tdata      <= 72'd0    ;
 		MM2S_CMD_tvalid     <=  1'd0;
-	end else begin // //搬移内容的总长度，一次搬移1024个byte，自动递增，每一帧都是eof
+	end else begin // //転送内容の総長。1 回に 1024 byte 転送し、自動インクリメント、各フレームが eof
 		MM2S_CMD_tdata      <= MM2S_CMD ;
 		MM2S_CMD_tvalid     <= !M_AXIS_MM2S_CMD_tready;
 	end
@@ -119,7 +119,7 @@ always @ (posedge axi_aclk or negedge axi_aresetn )
 
 
 //========================================================================================================
-//2. 寄存器控制总线
+//2. レジスタ制御バス
 localparam ADDR_WIDTH = 32; 
 localparam DATA_WIDTH = 32;
 localparam STRB_WIDTH =  4;
@@ -171,13 +171,13 @@ axil_reg_if axil_reg_if_inst (
                        
                        
                        
-//写入
+//書き込み
 always @ (posedge axi_aclk or negedge axi_aresetn )
 	if(!axi_aresetn) begin
 		mm2s_saddr <= 32'd0;
 		mm2s_eof   <=  1'd1;
 		mm2s_incr  <=  1'd0;
-		mm2s_lenx  <= 23'd1024;//搬移内容的总长度，一次搬移1024个byte，自动递增，每一帧都是eof
+		mm2s_lenx  <= 23'd1024;//転送内容の総長。1 回に 1024 byte 転送し、自動インクリメント、各フレームが eof
 		
 		s2mm_saddr <= 32'd0;
 		s2mm_eof   <=  1'd1;
@@ -221,7 +221,7 @@ always @ (posedge axi_aclk or negedge axi_aresetn )
 
 
 
-//读出
+//読み出し
 always @ (posedge axi_aclk or negedge axi_aresetn )
 	if(!axi_aresetn) 
 		reg_rd_data <= 32'd0;

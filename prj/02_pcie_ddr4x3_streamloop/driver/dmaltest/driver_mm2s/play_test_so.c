@@ -1,6 +1,6 @@
 /**
  * @file play_test_so.c
- * @brief 通过动态库调用AXI DMA MM2S驱动的测试程序
+ * @brief 共有ライブラリ経由で AXI DMA MM2S ドライバを呼び出すテストプログラム
  */
 
 #include <stdio.h>
@@ -12,7 +12,7 @@
 #include <termios.h>
 #include <dlfcn.h>
 
-// 函数指针类型定义
+// 関数ポインタ型の定義
 typedef struct axidma_mm2s_t* (*init_func_t)(int);
 typedef void (*free_func_t)(struct axidma_mm2s_t*);
 typedef int (*play_file_func_t)(struct axidma_mm2s_t*, const char*);
@@ -20,12 +20,12 @@ typedef int (*play_memory_func_t)(struct axidma_mm2s_t*, const void*, uint64_t);
 typedef int (*stop_func_t)(struct axidma_mm2s_t*);
 typedef int (*wait_func_t)(struct axidma_mm2s_t*);
 
-// 全局变量
+// グローバル変数
 static void *lib_handle = NULL;
 static struct axidma_mm2s_t *g_ctx = NULL;
 static stop_func_t axidma_mm2s_stop_func = NULL;
 
-// 信号处理函数
+// シグナルハンドラ
 static void signal_handler(int sig)
 {
     if (g_ctx && axidma_mm2s_stop_func) {
@@ -35,7 +35,7 @@ static void signal_handler(int sig)
     exit(0);
 }
 
-// 设置终端为非规范模式，用于检测按键
+// キー入力検出のため端末を非カノニカルモードに設定
 static void setup_terminal(void)
 {
     struct termios new_termios;
@@ -44,7 +44,7 @@ static void setup_terminal(void)
     tcsetattr(STDIN_FILENO, TCSANOW, &new_termios);
 }
 
-// 恢复终端设置
+// 端末設定を復元
 static void restore_terminal(void)
 {
     struct termios new_termios;
@@ -63,21 +63,21 @@ int main(int argc, char *argv[])
     const char *filename = argv[1];
     int is_cyclic = (argc == 3 && strcmp(argv[2], "cyclic") == 0);
     
-    // 加载动态库
+    // 共有ライブラリをロード
     lib_handle = dlopen("./libaxidma_mm2s.so", RTLD_LAZY);
     if (!lib_handle) {
         fprintf(stderr, "Failed to load library: %s\n", dlerror());
         return 1;
     }
     
-    // 获取函数指针
+    // 関数ポインタを取得
     init_func_t axidma_mm2s_init_func = (init_func_t)dlsym(lib_handle, "axidma_mm2s_init");
     free_func_t axidma_mm2s_free_func = (free_func_t)dlsym(lib_handle, "axidma_mm2s_free");
     play_file_func_t axidma_mm2s_play_file_func = (play_file_func_t)dlsym(lib_handle, "axidma_mm2s_play_file");
     axidma_mm2s_stop_func = (stop_func_t)dlsym(lib_handle, "axidma_mm2s_stop");
     wait_func_t axidma_mm2s_wait_func = (wait_func_t)dlsym(lib_handle, "axidma_mm2s_wait");
     
-    // 检查函数指针是否有效
+    // 関数ポインタが有効かチェック
     if (!axidma_mm2s_init_func || !axidma_mm2s_free_func || !axidma_mm2s_play_file_func ||
         !axidma_mm2s_stop_func || !axidma_mm2s_wait_func) {
         fprintf(stderr, "Failed to get function pointers: %s\n", dlerror());
@@ -85,11 +85,11 @@ int main(int argc, char *argv[])
         return 1;
     }
     
-    // 注册信号处理函数
+    // シグナルハンドラを登録
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
     
-    // 设置终端为非规范模式
+    // 端末を非カノニカルモードに設定
     setup_terminal();
     
     printf("Initializing AXI DMA MM2S driver...\n");
@@ -113,20 +113,20 @@ int main(int argc, char *argv[])
     
     printf("DMA transfer started. Press any key to stop...\n");
     
-    // 等待DMA传输完成
+    // DMA 転送の完了を待つ
     axidma_mm2s_wait_func(g_ctx);
     
     printf("DMA transfer completed\n");
     
-    // 释放资源
+    // リソースを解放
     axidma_mm2s_free_func(g_ctx);
     g_ctx = NULL;
     
-    // 关闭动态库
+    // 共有ライブラリを閉じる
     dlclose(lib_handle);
     lib_handle = NULL;
     
-    // 恢复终端设置
+    // 端末設定を復元
     restore_terminal();
     
     return 0;

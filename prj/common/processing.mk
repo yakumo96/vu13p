@@ -54,7 +54,7 @@ export MKENV_MCS_SADDR                = $(MCS_SADDR)
 
 
 
-# 6. 定义仅仅导出bit文件
+# 6. bit ファイルのみを出力するターゲットを定義
 bit:
 	$(VIVADO) -nojournal -nolog -mode batch -source $(PRJTCL) -notrace -tclargs runall &
 
@@ -63,11 +63,11 @@ vivado: gui
 gui:
 	$(VIVADO) -nojournal -nolog  -mode batch -source $(PRJTCL) -notrace -tclargs openprj &
 
-# 2. 导出lint报告
+# 2. lint レポートを出力
 lint:
 	$(VIVADO) -nojournal -nolog  -mode batch -source $(PRJTCL) -notrace -tclargs export_lint
 
-# 3. 定义仅仅导出仿真平台
+# 3. シミュレーション環境のみを出力するターゲットを定義
 sim:
 	$(VIVADO) -nojournal -nolog  -mode batch -source $(PRJTCL) -notrace -tclargs export_sim 
 

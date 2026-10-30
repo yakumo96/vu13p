@@ -6,13 +6,13 @@
 #========================================================================
 #---Model: GPT-4
 #---
-#---用python 产生两个正弦波相加的信号，并设计一个33个系数的FIR滤波器滤除高频信号
-#---要使用Python生成两个正弦波相加的信号并设计一个具有33个系数的FIR滤波器以滤除高频信号，您可以使用以下库和代码：
+#---python で 2 つの正弦波を足し合わせた信号を生成し、高周波成分を除去する 33 係数の FIR フィルタを設計して
+#---Python で 2 つの正弦波を足し合わせた信号を生成し、高周波信号を除去する 33 係数の FIR フィルタを設計するには、以下のライブラリとコードを使用できます：
 #---
-#---安装所需库：
+#---必要なライブラリのインストール：
 #---bash
 #---pip install numpy scipy matplotlib
-#---编写Python代码：
+#---Python コードの作成：
 
 
 
@@ -20,50 +20,50 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import firwin, lfilter
 def save_txt(signal, filename, scale_factor=(32768/2)):
-    # 归一化信号
+    # 信号を正規化
     norm_signal = signal / np.max(np.abs(signal))
 
-    # 根据给定的规模因子缩放信号
+    # 指定されたスケール係数で信号をスケーリング
     scaled_signal = np.round(norm_signal * scale_factor)
 
-    # 保存为文本文件
+    # テキストファイルとして保存
     np.savetxt(filename, scaled_signal, fmt='%d')
 
 
-# 参数设置
-fs = 1000  # 采样频率
-duration = 100  # 信号持续时间 (秒)
-f1 = 5  # 第一个正弦波的频率 (赫兹)
-f2 = 100  # 第二个正弦波的频率 (赫兹)
-num_taps = 33  # FIR滤波器的系数个数
-cutoff_freq = 30  # 滤波器截止频率 (赫兹)
+# パラメータ設定
+fs = 1000  # サンプリング周波数
+duration = 100  # 信号の継続時間 (秒)
+f1 = 5  # 1 つ目の正弦波の周波数 (Hz)
+f2 = 100  # 2 つ目の正弦波の周波数 (Hz)
+num_taps = 33  # FIR フィルタの係数の数
+cutoff_freq = 30  # フィルタのカットオフ周波数 (Hz)
 
-# 如果您已经安装了 Noto 字体，可以使用以下命令
+# Noto フォントをインストール済みであれば、次のコマンドを使用できます
 plt.rcParams['font.family'] = 'Noto Sans CJK JP'
 
-# 或者，如果您使用的是其他字体，请将 'font_name' 替换为所需字体的名称
+# あるいは、別のフォントを使用している場合は 'font_name' を目的のフォント名に置き換えてください
 # plt.rcParams['font.family'] = 'font_name'
 
-# 生成时间序列
+# 時系列を生成
 t = np.linspace(0, duration, int(fs * duration), endpoint=False)
 
-# 生成正弦波信号
+# 正弦波信号を生成
 sin_wave_1 = np.sin(2 * np.pi * f1 * t)
 sin_wave_2 = np.sin(2 * np.pi * f2 * t)
 combined_signal = sin_wave_1 + sin_wave_2
-# 保存合成信号为文本文件
+# 合成信号をテキストファイルとして保存
 save_txt(combined_signal, "combined_signal.txt", 6000)
 
-# 设计FIR滤波器
+# FIR フィルタを設計
 fir_coefficients = firwin(num_taps, cutoff_freq, fs=fs, pass_zero=True, window="hamming")
 print(fir_coefficients )
-# 保存合成信号为文本文件
+# 合成信号をテキストファイルとして保存
 save_txt(fir_coefficients, "fir_coefficients.txt")
 
-# 应用滤波器
+# フィルタを適用
 filtered_signal = lfilter(fir_coefficients, 1.0, combined_signal)
 
-# 绘制原始信号和滤波后的信号
+# 元の信号とフィルタ後の信号をプロット
 plt.figure()
 plt.subplot(2, 1, 1)
 plt.plot(t, combined_signal)

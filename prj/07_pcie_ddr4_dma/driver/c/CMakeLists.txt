@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(MyProject)
 
 
-# 添加头文件搜索路径
+# ヘッダファイルの検索パスを追加
 
 include_directories(./include)
 include_directories(/usr/include)
@@ -24,7 +24,7 @@ include_directories(../lib/clock)
 aux_source_directory(../lib/iic/          IIC_LIB_SRC)
 aux_source_directory(../lib/common/       IIC_LIB_COM)
 
-# 添加可执行文件
+# 実行ファイルを追加
 add_executable(iic_test
 	           main.c
 			   ./lib_wbwr.c

@@ -7,17 +7,17 @@
 //
 //  Model: GPT-4
 //  
-// Q 用Verilog 写一个FIR 滤波器，其中输入输出端口的位宽为16bit, 一共33个系数，每个系数的位宽也都是16bit, 并且系数位宽可通过端口配置
+// Q Verilog で FIR フィルタを書いてください。入出力ポートのビット幅は 16bit、係数は全部で 33 個、各係数のビット幅も 16bit で、係数のビット幅はポートで設定できるようにしてください
 //
-// A  根据你的要求，下面是一个基于Verilog的FIR滤波器的实现。它有16位宽的输入和输出端口，33个16位宽的系数，且系数位宽可以通过端口配置。
+// A  ご要望に基づき、以下は Verilog による FIR フィルタの実装です。16 ビット幅の入出力ポートと、16 ビット幅の係数 33 個を持ち、係数のビット幅はポートで設定できます。
 // 
-// Q 输入信号data_in是有符号数，直接使用乘法符号 * 并不正确，应该增加一个子模块，专门处理乘法，或者调用xilinx ultrascale plus 乘法器原语。另外 加法树太长了，应当在加法树处增加寄存器打拍
+// Q 入力信号 data_in は符号付き数なので、乗算記号 * をそのまま使うのは正しくありません。乗算専用のサブモジュールを追加するか、xilinx ultrascale plus の乗算器プリミティブを呼び出すべきです。また加算ツリーが長すぎるので、加算ツリーにレジスタを挿入してパイプライン化すべきです
 //
-// A 你的建议是非常合理的。针对有符号数的乘法，我们可以使用专门的乘法子模块。这里我为你提供一个基于Xilinx UltraScale+ FPGA的有符号数乘法器原语DSP48E1的实现。
+// A ご提案はとても妥当です。符号付き数の乗算には専用の乗算サブモジュールを使えます。ここでは Xilinx UltraScale+ FPGA ベースの符号付き乗算器プリミティブ DSP48E1 を使った実装を示します。
 //
-// Q 我希望在累加器处每4个加法打一拍。
+// Q 累算器で加算 4 回ごとに 1 段レジスタを入れたいです。
 //
-// A 根据您的要求，我们可以在累加器处每4个加法后添加一个寄存器。以下是修改后的FIR滤波器模块：
+// A ご要望に基づき、累算器で加算 4 回ごとにレジスタを 1 つ追加できます。以下は修正後の FIR フィルタモジュールです：
 
 
 //  verilog
@@ -59,7 +59,7 @@ module fir_core (
 	input       [15:0] coeff_31,
 	input       [15:0] coeff_32,
     output wire [15:0] data_out,
-	output wire [63:0] testvec  //送到逻辑分析仪的测试矢量
+	output wire [63:0] testvec  //ロジックアナライザに送るテストベクタ
 );
 
     wire [15:0] coeff[32:0];
@@ -100,7 +100,7 @@ module fir_core (
 
 
 
-    // 定义内部信号
+    // 内部信号の定義
     reg [15:0] data_buffer [32:0];
     wire [15:0] mult_result [32:0];
     reg  [15:0] accum_result_stage1 [7:0];
@@ -109,10 +109,10 @@ module fir_core (
     reg  [15:0] mult_result_d1;
     reg  [15:0] mult_result_d2;
 
-    // 有符号数乘法器子模块实例化
+    // 符号付き乗算器サブモジュールのインスタンス化
     generate
     genvar i;
-		// 使用DSP48E1原语进行乘法运算
+		// DSP48E1 プリミティブで乗算を行う
         for (i = 0; i < 33; i = i + 1) begin
 			libv_base_smult #(16,16,16) libv_base_smult_inst(
 				.a(data_buffer[i]), 
@@ -122,7 +122,7 @@ module fir_core (
         end
     endgenerate
 
-    // 累加器 - 第一级（每4个加法）
+    // 累算器 - 第 1 段（加算 4 回ごと）
 	integer k;
     always @(posedge clk or posedge rst) begin
         if (rst) begin
@@ -136,7 +136,7 @@ module fir_core (
         end
     end
 
-    // 累加器 - 第二级（每2个加法）
+    // 累算器 - 第 2 段（加算 2 回ごと）
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             for (k = 0; k < 2; k = k + 1) begin
@@ -161,7 +161,7 @@ module fir_core (
 
 
 
-    // 累加器 - 最后一级
+    // 累算器 - 最終段
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             final_result <= 16'h0;
@@ -172,7 +172,7 @@ module fir_core (
 
 	assign data_out = final_result ;
 
-    // 延迟线（用于存储输入数据）
+    // 遅延線（入力データの保持用）
     always @(posedge clk or posedge rst) begin
         if (rst) begin
             for (k = 0; k < 33; k = k + 1) begin

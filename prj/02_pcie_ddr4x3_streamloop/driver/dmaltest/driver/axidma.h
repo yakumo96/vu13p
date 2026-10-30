@@ -13,76 +13,76 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <time.h>
-#include <sys/poll.h>   // 用于poll函数和相关常量
+#include <sys/poll.h>   // poll 関数と関連定数のため
 typedef struct {
-    int dma_fd;             // DMA控制器文件描述符
-    int data_fd;            // 数据文件描述符
-    int event_fd;           // 事件文件描述符
-    void *dma_regs;         // DMA寄存器映射
-    void *desc_base;        // 描述符基地址映射
-    void *buffer;           // 数据缓冲区映射
-    uint64_t file_size;     // 文件大小
-    uint64_t bytes_sent;    // 已发送字节数
-    uint64_t buffer_size;   // 缓冲区大小
-    uint32_t desc_count;         // 描述符数量
-    int is_cyclic;          // 是否为循环模式
-    pthread_t event_thread; // 事件处理线程
-    int running;            // 运行标志
+    int dma_fd;             // DMA コントローラのファイルディスクリプタ
+    int data_fd;            // データファイルのファイルディスクリプタ
+    int event_fd;           // イベントのファイルディスクリプタ
+    void *dma_regs;         // DMA レジスタのマッピング
+    void *desc_base;        // ディスクリプタのベースアドレスのマッピング
+    void *buffer;           // データバッファのマッピング
+    uint64_t file_size;     // ファイルサイズ
+    uint64_t bytes_sent;    // 送信済みバイト数
+    uint64_t buffer_size;   // バッファサイズ
+    uint32_t desc_count;         // ディスクリプタ数
+    int is_cyclic;          // ループ（cyclic）モードかどうか
+    pthread_t event_thread; // イベント処理スレッド
+    int running;            // 実行フラグ
 } mm2s_dma_t;
 
 
-// 工作队列项结构
+// ワークキュー項目の構造体
 typedef struct {
-    void *buffer;           // 数据缓冲区指针
-    size_t size;            // 数据大小
-    int frame_index;        // 帧索引
-    struct timespec ts;     // 时间戳
+    void *buffer;           // データバッファへのポインタ
+    size_t size;            // データサイズ
+    int frame_index;        // フレームインデックス
+    struct timespec ts;     // タイムスタンプ
 } work_item_t;
 
-// 工作队列结构
+// ワークキューの構造体
 typedef struct {
-    work_item_t *items;     // 工作项数组
-    int capacity;           // 队列容量
-    int head;               // 队列头
-    int tail;               // 队列尾
-    int count;              // 队列中的项目数
-    pthread_mutex_t mutex;  // 互斥锁
-    pthread_cond_t not_empty; // 条件变量：队列非空
-    pthread_cond_t not_full;  // 条件变量：队列非满
+    work_item_t *items;     // ワーク項目の配列
+    int capacity;           // キューの容量
+    int head;               // キューの先頭
+    int tail;               // キューの末尾
+    int count;              // キュー内の項目数
+    pthread_mutex_t mutex;  // ミューテックス
+    pthread_cond_t not_empty; // 条件変数：キューが空でない
+    pthread_cond_t not_full;  // 条件変数：キューが満杯でない
 } work_queue_t;
 
-// 描述符状态跟踪
+// ディスクリプタの状態追跡
 typedef struct {
-    int processed;          // 是否已处理
-    uint32_t status;        // 描述符状态
-    uint32_t bytes_received; // 接收到的字节数
-    int is_sof;             // 是否为帧起始
-    int is_eof;             // 是否为帧结束
+    int processed;          // 処理済みかどうか
+    uint32_t status;        // ディスクリプタの状態
+    uint32_t bytes_received; // 受信したバイト数
+    int is_sof;             // フレーム先頭かどうか
+    int is_eof;             // フレーム末尾かどうか
 } desc_status_t;
 
-// S2MM DMA结构
+// S2MM DMA の構造体
 typedef struct {
-    int dma_fd;             // DMA控制器文件描述符
-    int data_fd;            // 数据文件描述符
-    int event_fd;           // 事件文件描述符
-    void *dma_regs;         // DMA寄存器映射
-    void *desc_base;        // 描述符基地址映射
-    void *buffer;           // 数据缓冲区映射
-    size_t buffer_size;     // 缓冲区大小
-    size_t desc_size;       // 每个描述符的大小
-    uint32_t desc_count;         // 描述符数量
-    size_t segment_size;    // 每个描述符对应的缓冲区大小
-    desc_status_t *desc_status; // 描述符状态数组
-    work_queue_t work_queue;  // 工作队列
-    pthread_t event_thread;   // 事件处理线程
-    pthread_t worker_thread;  // 工作线程
-    int running;            // 运行标志
-    int frame_count;        // 接收到的帧计数
-    char output_dir[256];   // 输出目录
+    int dma_fd;             // DMA コントローラのファイルディスクリプタ
+    int data_fd;            // データファイルのファイルディスクリプタ
+    int event_fd;           // イベントのファイルディスクリプタ
+    void *dma_regs;         // DMA レジスタのマッピング
+    void *desc_base;        // ディスクリプタのベースアドレスのマッピング
+    void *buffer;           // データバッファのマッピング
+    size_t buffer_size;     // バッファサイズ
+    size_t desc_size;       // 各ディスクリプタのサイズ
+    uint32_t desc_count;         // ディスクリプタ数
+    size_t segment_size;    // 各ディスクリプタに対応するバッファのサイズ
+    desc_status_t *desc_status; // ディスクリプタ状態の配列
+    work_queue_t work_queue;  // ワークキュー
+    pthread_t event_thread;   // イベント処理スレッド
+    pthread_t worker_thread;  // ワーカースレッド
+    int running;            // 実行フラグ
+    int frame_count;        // 受信したフレーム数
+    char output_dir[256];   // 出力ディレクトリ
 } s2mm_dma_t;
 
 
-// 函数声明
+// 関数宣言
 int init_mm2s_dma(mm2s_dma_t *dma, const char *filename);
 int load_file_to_buffer(mm2s_dma_t *dma, const char *filename);
 int setup_mm2s_descriptors(mm2s_dma_t *dma);
@@ -92,7 +92,7 @@ void *event_handler_thread(void *arg);
 
 
 
-// 函数声明
+// 関数宣言
 int init_s2mm_dma(s2mm_dma_t *dma, const char *output_dir);
 int setup_s2mm_descriptors(s2mm_dma_t *dma);
 int start_s2mm_dma(s2mm_dma_t *dma);
@@ -110,8 +110,8 @@ void *worker_thread(void *arg);
 // =====================================================================================
 // =====================================================================================
 // =====================================================================================
-// 以下是固定的寄存器
-// DMA寄存器偏移量
+// 以下は固定のレジスタ
+// DMA レジスタのオフセット
 #define MM2S_DMACR        0x00// MM2S DMA Control Register
 #define MM2S_DMASR        0x04// MM2S DMA Status Register
 #define MM2S_CURDESC      0x08// MM2S Current Descriptor
@@ -126,42 +126,42 @@ void *worker_thread(void *arg);
 #define S2MM_TAILDESC     0x40// S2MM Tail Descriptor
 #define S2MM_TAILDESC_MSB 0x44// S2MM Tail Descriptor MSB
 
-// 描述符偏移量
+// ディスクリプタのオフセット
 #define NXTDESC_OFFSET         0x00
 #define NXTDESC_MSB_OFFSET     0x04
 #define BUFFER_ADDR_OFFSET     0x08
 #define BUFFER_ADDR_MSB_OFFSET 0x0C
 #define CONTROL_OFFSET         0x18
 #define STATUS_OFFSET          0x1C
-#define APP_OFFSET             0x20  // 应用特定数据偏移量
-#define DESC_SIZE              64    // 描述符大小(字节)
+#define APP_OFFSET             0x20  // アプリケーション固有データのオフセット
+#define DESC_SIZE              64    // ディスクリプタのサイズ（バイト）
 
-// 控制寄存器位
+// 制御レジスタのビット
 #define DMACR_RS         (1 << 0)    // Run/Stop
 #define DMACR_RESET      (1 << 2)    // Reset
 #define DMACR_KEYHOLE    (1 << 3)    // Keyhole
 #define DMACR_CYCLIC     (1 << 4)    // Cyclic BD Enable
-#define DMACR_IOC_IRQ    (1 << 12)   // IOC中断使能
-#define DMACR_DLY_IRQ    (1 << 13)   // DLY中断使能
-#define DMACR_ERR_IRQ    (1 << 14)   // 错误中断使能
+#define DMACR_IOC_IRQ    (1 << 12)   // IOC 割り込みイネーブル
+#define DMACR_DLY_IRQ    (1 << 13)   // DLY 割り込みイネーブル
+#define DMACR_ERR_IRQ    (1 << 14)   // エラー割り込みイネーブル
                          
-// 状态寄存器位          
-#define DMASR_HALTED     (1 << 0)    // DMA已停止
-#define DMASR_IDLE       (1 << 1)    // DMA空闲
-#define DMASR_IOC_IRQ    (1 << 12)   // IOC中断
-#define DMASR_ERR_IRQ    (1 << 14)   // 错误中断
+// ステータスレジスタのビット          
+#define DMASR_HALTED     (1 << 0)    // DMA 停止済み
+#define DMASR_IDLE       (1 << 1)    // DMA アイドル
+#define DMASR_IOC_IRQ    (1 << 12)   // IOC 割り込み
+#define DMASR_ERR_IRQ    (1 << 14)   // エラー割り込み
                          
-// 描述符控制位          
+// ディスクリプタ制御ビット          
 #define CONTROL_RXEOF    (1 << 26)   // End of Frame
 #define CONTROL_RXSOF    (1 << 27)   // Start of Frame
 
-// 描述符状态位
-#define STATUS_COMPLETED (1 << 31)  // 描述符已完成
-#define STATUS_RXEOF     (1 << 26)  // 接收到EOF
-#define STATUS_RXSOF     (1 << 27)  // 接收到SOF
+// ディスクリプタステータスビット
+#define STATUS_COMPLETED (1 << 31)  // ディスクリプタ完了
+#define STATUS_RXEOF     (1 << 26)  // EOF を受信
+#define STATUS_RXSOF     (1 << 27)  // SOF を受信
 
 
-// 描述符控制位
+// ディスクリプタ制御ビット
 #define CONTROL_TXEOF  (1 << 26)   // End of Frame
 #define CONTROL_TXSOF  (1 << 27)   // Start of Frame
 

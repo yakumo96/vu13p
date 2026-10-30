@@ -1,6 +1,6 @@
 /**
  * @file recv_test.c
- * @brief AXI DMA S2MM接收测试程序
+ * @brief AXI DMA S2MM 受信テストプログラム
  */
 
 #include "axidma_s2mm.h"
@@ -9,10 +9,10 @@
 #include <signal.h>
 #include <unistd.h>
 
-// 全局句柄，用于信号处理
+// シグナル処理用のグローバルハンドル
 static axidma_s2mm_t *g_handle = NULL;
 
-// 信号处理函数
+// シグナルハンドラ
 static void signal_handler(int sig)
 {
     printf("Received signal %d, exiting...\n", sig);
@@ -25,9 +25,9 @@ static void signal_handler(int sig)
 int main(int argc, char *argv[])
 {
     const char *output_file = "received_data.bin";
-    int run_time = 30;  // 默认运行30秒
+    int run_time = 30;  // デフォルトで 30 秒実行
     
-    // 解析命令行参数
+    // コマンドライン引数を解析
     if (argc > 1) {
         output_file = argv[1];
     }
@@ -43,18 +43,18 @@ int main(int argc, char *argv[])
     printf("Output file: %s\n", output_file);
     printf("Run time: %d seconds\n", run_time);
     
-    // 设置信号处理
+    // シグナル処理を設定
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
     
-    // 初始化AXI DMA S2MM
+    // AXI DMA S2MM を初期化
     g_handle = axidma_s2mm_init(output_file);
     if (!g_handle) {
         fprintf(stderr, "Failed to initialize AXI DMA S2MM\n");
         return 1;
     }
     
-    // 启动AXI DMA S2MM传输
+    // AXI DMA S2MM 転送を開始
     if (axidma_s2mm_start(g_handle) != 0) {
         fprintf(stderr, "Failed to start AXI DMA S2MM\n");
         axidma_s2mm_free(g_handle);
@@ -63,13 +63,13 @@ int main(int argc, char *argv[])
     
     printf("AXI DMA S2MM running, press Ctrl+C to stop...\n");
     
-    // 运行指定时间
+    // 指定時間だけ実行
     sleep(run_time);
     
-    // 停止AXI DMA S2MM传输
+    // AXI DMA S2MM 転送を停止
     axidma_s2mm_stop(g_handle);
     
-    // 释放资源
+    // リソースを解放
     axidma_s2mm_free(g_handle);
     g_handle = NULL;
     

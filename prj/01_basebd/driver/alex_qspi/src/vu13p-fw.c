@@ -24,7 +24,7 @@
 
 
 //===============================================================================
-// log by masw@masw.tech 二次开发仅仅需要关心以下1个变量
+// log by masw@masw.tech 二次開発では以下の 1 つの変数だけ気にすればよい
 #define ALEXQSPI_ADDR 0x00000000 
 #define FPGA_ID_XCVU13P     0x4B51093
 //===============================================================================
@@ -619,15 +619,15 @@ int main(int argc, char *argv[])
         fprintf(stderr, "Device not specified, using default %s\n", device );
     }
     //========================================================================================================================================
-    // 打开设备文件
-    int axilite = open(device, O_RDWR | O_SYNC);//axi lite设备
+    // デバイスファイルを開く
+    int axilite = open(device, O_RDWR | O_SYNC);//axi lite デバイス
     if (axilite == -1) {
         perror("Failed to open device");
         close(axilite);
         return -1;
     }
-    // 映射设备文件到内存
-    size_t mapping_size = 4 * 1024; // 映射的大小，4K , 最小4k对齐
+    // デバイスファイルをメモリにマップ
+    size_t mapping_size = 4 * 1024; // マップするサイズ。4K、最小 4k アライン
     void  *mapped_base = mmap(NULL, mapping_size, PROT_READ | PROT_WRITE, MAP_SHARED, axilite, ALEXQSPI_ADDR );
     if (mapped_base == MAP_FAILED) {
         perror("Failed to map memory");
@@ -690,8 +690,8 @@ int main(int argc, char *argv[])
 
 //=======================================================================================================================
 	//struct mqnic_reg_block {
-	//    uint32_t type         ; --------------> 读回  8'h60: reg_rd_data <= 32'h0000C120;             // SPI flash ctrl: Type
-	//    uint32_t version      ; --------------> 读回  8'h64: reg_rd_data <= 32'h00000200;             // SPI flash ctrl: Version
+	//    uint32_t type         ; --------------> 読み戻し  8'h60: reg_rd_data <= 32'h0000C120;             // SPI flash ctrl: Type
+	//    uint32_t version      ; --------------> 読み戻し  8'h64: reg_rd_data <= 32'h00000200;             // SPI flash ctrl: Version
 	//    volatile uint8_t *base;
 	//    volatile uint8_t *regs; -------------->       8'h70:
 	//};
@@ -708,36 +708,36 @@ int main(int argc, char *argv[])
         uint32_t reg_val;
 
         // SPI flash
-        flash_format = reg_read32(flash_rb->base + 0x6C) ;// 读寄存器0x6c[3:0] reg_rd_data[3:0]   <= 2;// configuration (two segments)
+        flash_format = reg_read32(flash_rb->base + 0x6C) ;// レジスタ 0x6c[3:0] を読む reg_rd_data[3:0]   <= 2;// configuration (two segments)
 
         printf("Flash type: SPI\n");
         printf("Flash format: 0x%08x\n", flash_format);
 
-//--强配，不用读回值了--        switch (flash_rb->version) {
-//--强配，不用读回值了--            case 0x00000100:
-//--强配，不用读回值了--                flash_configuration = (flash_format >> 8) & 0xff;
-//--强配，不用读回值了--                flash_default_segment = (flash_configuration > 1 ? 1 : 0);
-//--强配，不用读回值了--                flash_fallback_segment = 0;
-//--强配，不用读回值了--                flash_segment0_length = 0;
-//--强配，不用读回值了--
-//--强配，不用读回值了--                if (flash_configuration == 0x81)
-//--强配，不用读回值了--                {
-//--强配，不用读回值了--                    // Alveo boards
-//--强配，不用读回值了--                    flash_configuration = 2;
-//--强配，不用读回值了--                    flash_segment0_length = 0x01002000;
-//--强配，不用读回值了--                }
-//--强配，不用读回值了--                break;
-//--强配，不用读回值了--            case 0x00000200:
-//--强配，不用读回值了--                flash_configuration = flash_format & 0xf;
-//--强配，不用读回值了--                flash_default_segment = (flash_format >> 4) & 0xf;
-//--强配，不用读回值了--                flash_fallback_segment = (flash_format >> 8) & 0xf;
-//--强配，不用读回值了--                flash_segment0_length = flash_format & 0xfffff000;
-//--强配，不用读回值了--                break;
-//--强配，不用读回值了--            default:
-//--强配，不用读回值了--                fprintf(stderr, "Unknown SPI flash block version\n");
-//--强配，不用读回值了--                ret = -1;
-//--强配，不用读回值了--                goto skip_flash;
-//--强配，不用读回值了--        }
+//--固定設定にしたので読み戻し値は不要--        switch (flash_rb->version) {
+//--固定設定にしたので読み戻し値は不要--            case 0x00000100:
+//--固定設定にしたので読み戻し値は不要--                flash_configuration = (flash_format >> 8) & 0xff;
+//--固定設定にしたので読み戻し値は不要--                flash_default_segment = (flash_configuration > 1 ? 1 : 0);
+//--固定設定にしたので読み戻し値は不要--                flash_fallback_segment = 0;
+//--固定設定にしたので読み戻し値は不要--                flash_segment0_length = 0;
+//--固定設定にしたので読み戻し値は不要--
+//--固定設定にしたので読み戻し値は不要--                if (flash_configuration == 0x81)
+//--固定設定にしたので読み戻し値は不要--                {
+//--固定設定にしたので読み戻し値は不要--                    // Alveo boards
+//--固定設定にしたので読み戻し値は不要--                    flash_configuration = 2;
+//--固定設定にしたので読み戻し値は不要--                    flash_segment0_length = 0x01002000;
+//--固定設定にしたので読み戻し値は不要--                }
+//--固定設定にしたので読み戻し値は不要--                break;
+//--固定設定にしたので読み戻し値は不要--            case 0x00000200:
+//--固定設定にしたので読み戻し値は不要--                flash_configuration = flash_format & 0xf;
+//--固定設定にしたので読み戻し値は不要--                flash_default_segment = (flash_format >> 4) & 0xf;
+//--固定設定にしたので読み戻し値は不要--                flash_fallback_segment = (flash_format >> 8) & 0xf;
+//--固定設定にしたので読み戻し値は不要--                flash_segment0_length = flash_format & 0xfffff000;
+//--固定設定にしたので読み戻し値は不要--                break;
+//--固定設定にしたので読み戻し値は不要--            default:
+//--固定設定にしたので読み戻し値は不要--                fprintf(stderr, "Unknown SPI flash block version\n");
+//--固定設定にしたので読み戻し値は不要--                ret = -1;
+//--固定設定にしたので読み戻し値は不要--                goto skip_flash;
+//--固定設定にしたので読み戻し値は不要--        }
         flash_configuration    = 2;
         flash_default_segment  = 1;
         flash_fallback_segment = 0;
@@ -747,7 +747,7 @@ int main(int argc, char *argv[])
 
 
 
-        // determine data width-- log by 通过读写寄存器，判定QSPI的位宽数, 这里读回来一定是4
+        // determine data width-- log by レジスタの読み書きで QSPI のビット幅を判定する。ここで読み戻される値は必ず 4
         flash_data_width = 0;
 		
                   reg_write32(flash_rb->base + 0x70, 0x0002000f);
@@ -759,7 +759,7 @@ int main(int argc, char *argv[])
             reg_val >>= 1;
             flash_data_width++;
         }
-		// 第二个Flash的位宽数，由于ali卡没有定义第二个flash, 所以这里读回来一定是0
+		// 2 つ目の Flash のビット幅。ali カードには 2 つ目の flash が定義されていないので、ここで読み戻される値は必ず 0
                   reg_write32(flash_rb->base + 0x74, 0x0002000f);
         reg_val = reg_read32 (flash_rb->base + 0x74            ) & 0xf;
                   reg_write32(flash_rb->base + 0x74, 0x00020000);
@@ -772,22 +772,22 @@ int main(int argc, char *argv[])
 
         printf("SPI Flash Data width: %d\n", flash_data_width);
 
-//--ali卡flash_data_width=4---        if (flash_data_width > 4) //ali卡 这里不会执行
-//--ali卡flash_data_width=4---        {
-//--ali卡flash_data_width=4---            dual_qspi = 1;
-//--ali卡flash_data_width=4---            pri_flash = flash_open_spi(4, flash_rb->regs+0x10);
-//--ali卡flash_data_width=4---            sec_flash = flash_open_spi(4, flash_rb->regs+0x14);
-//--ali卡flash_data_width=4---
-//--ali卡flash_data_width=4---            if (!pri_flash || !sec_flash)
-//--ali卡flash_data_width=4---            {
-//--ali卡flash_data_width=4---                fprintf(stderr, "Failed to connect to flash device\n");
-//--ali卡flash_data_width=4---                ret = -1;
-//--ali卡flash_data_width=4---                goto skip_flash;
-//--ali卡flash_data_width=4---            }
-//--ali卡flash_data_width=4---
-//--ali卡flash_data_width=4---            flash_size = pri_flash->size+sec_flash->size;
-//--ali卡flash_data_width=4---        }
-//--ali卡flash_data_width=4---        else// 
+//--aliカードは flash_data_width=4---        if (flash_data_width > 4) //ali カードではここは実行されない
+//--aliカードは flash_data_width=4---        {
+//--aliカードは flash_data_width=4---            dual_qspi = 1;
+//--aliカードは flash_data_width=4---            pri_flash = flash_open_spi(4, flash_rb->regs+0x10);
+//--aliカードは flash_data_width=4---            sec_flash = flash_open_spi(4, flash_rb->regs+0x14);
+//--aliカードは flash_data_width=4---
+//--aliカードは flash_data_width=4---            if (!pri_flash || !sec_flash)
+//--aliカードは flash_data_width=4---            {
+//--aliカードは flash_data_width=4---                fprintf(stderr, "Failed to connect to flash device\n");
+//--aliカードは flash_data_width=4---                ret = -1;
+//--aliカードは flash_data_width=4---                goto skip_flash;
+//--aliカードは flash_data_width=4---            }
+//--aliカードは flash_data_width=4---
+//--aliカードは flash_data_width=4---            flash_size = pri_flash->size+sec_flash->size;
+//--aliカードは flash_data_width=4---        }
+//--aliカードは flash_data_width=4---        else// 
 		if(1)// add by masw
         {
             pri_flash = flash_open_spi(flash_data_width, flash_rb->regs);// flash_data_width==4
@@ -799,81 +799,81 @@ int main(int argc, char *argv[])
                 goto skip_flash;
             }
 
-            flash_size = pri_flash -> size;//这个size是从Flash内部的寄存器读回的！在flash_open_spi内部的init函数里操作
+            flash_size = pri_flash -> size;//この size は Flash 内部のレジスタから読み戻したもの！flash_open_spi 内部の init 関数で処理している
         }
     }
-//--ali卡不是 BPI FLASH --    else if ((flash_rb = mqnic_find_reg_block(dev->rb_list, MQNIC_RB_BPI_FLASH_TYPE, 0, 0)))
-//--ali卡不是 BPI FLASH --    {
-//--ali卡不是 BPI FLASH --        uint32_t reg_val;
-//--ali卡不是 BPI FLASH --
-//--ali卡不是 BPI FLASH --        // BPI flash
-//--ali卡不是 BPI FLASH --        flash_format = reg_read32(flash_rb->regs, MQNIC_RB_BPI_FLASH_REG_FORMAT);
-//--ali卡不是 BPI FLASH --
-//--ali卡不是 BPI FLASH --        printf("Flash type: BPI\n");
-//--ali卡不是 BPI FLASH --        printf("Flash format: 0x%08x\n", flash_format);
-//--ali卡不是 BPI FLASH --
-//--ali卡不是 BPI FLASH --        switch (flash_rb->version) {
-//--ali卡不是 BPI FLASH --            case 0x00000100:
-//--ali卡不是 BPI FLASH --                flash_configuration = (flash_format >> 8) & 0xff;
-//--ali卡不是 BPI FLASH --                flash_default_segment = (flash_configuration > 1 ? 1 : 0);
-//--ali卡不是 BPI FLASH --                flash_fallback_segment = 0;
-//--ali卡不是 BPI FLASH --                flash_segment0_length = 0;
-//--ali卡不是 BPI FLASH --                break;
-//--ali卡不是 BPI FLASH --            case MQNIC_RB_BPI_FLASH_VER:
-//--ali卡不是 BPI FLASH --                flash_configuration = flash_format & 0xf;
-//--ali卡不是 BPI FLASH --                flash_default_segment = (flash_format >> 4) & 0xf;
-//--ali卡不是 BPI FLASH --                flash_fallback_segment = (flash_format >> 8) & 0xf;
-//--ali卡不是 BPI FLASH --                flash_segment0_length = flash_format & 0xfffff000;
-//--ali卡不是 BPI FLASH --                break;
-//--ali卡不是 BPI FLASH --            default:
-//--ali卡不是 BPI FLASH --                fprintf(stderr, "Unknown BPI flash block version\n");
-//--ali卡不是 BPI FLASH --                ret = -1;
-//--ali卡不是 BPI FLASH --                goto skip_flash;
-//--ali卡不是 BPI FLASH --        }
-//--ali卡不是 BPI FLASH --
-//--ali卡不是 BPI FLASH --        // determine data width
-//--ali卡不是 BPI FLASH --        reg_write32(flash_rb->regs, MQNIC_RB_BPI_FLASH_REG_CTRL, 0x0001010f);
-//--ali卡不是 BPI FLASH --        reg_write32(flash_rb->regs, MQNIC_RB_BPI_FLASH_REG_DATA, 0xffffffff);
-//--ali卡不是 BPI FLASH --        reg_val = reg_read32(flash_rb->regs, MQNIC_RB_BPI_FLASH_REG_DATA);
-//--ali卡不是 BPI FLASH --        reg_write32(flash_rb->regs, MQNIC_RB_BPI_FLASH_REG_CTRL, 0x0000000f);
-//--ali卡不是 BPI FLASH --        reg_write32(flash_rb->regs, MQNIC_RB_BPI_FLASH_REG_DATA, 0x00000000);
-//--ali卡不是 BPI FLASH --
-//--ali卡不是 BPI FLASH --        flash_data_width = 0;
-//--ali卡不是 BPI FLASH --        while (reg_val)
-//--ali卡不是 BPI FLASH --        {
-//--ali卡不是 BPI FLASH --            reg_val >>= 1;
-//--ali卡不是 BPI FLASH --            flash_data_width++;
-//--ali卡不是 BPI FLASH --        }
-//--ali卡不是 BPI FLASH --
-//--ali卡不是 BPI FLASH --        printf("Data width: %d\n", flash_data_width);
-//--ali卡不是 BPI FLASH --
-//--ali卡不是 BPI FLASH --        bitswap = 1;
-//--ali卡不是 BPI FLASH --
-//--ali卡不是 BPI FLASH --        if (flash_data_width == 16)
-//--ali卡不是 BPI FLASH --        {
-//--ali卡不是 BPI FLASH --            word_size = 16;
-//--ali卡不是 BPI FLASH --        }
-//--ali卡不是 BPI FLASH --
-//--ali卡不是 BPI FLASH --        pri_flash = flash_open_bpi(flash_data_width,
-//--ali卡不是 BPI FLASH --            flash_rb->regs+MQNIC_RB_BPI_FLASH_REG_CTRL,
-//--ali卡不是 BPI FLASH --            flash_rb->regs+MQNIC_RB_BPI_FLASH_REG_ADDR,
-//--ali卡不是 BPI FLASH --            flash_rb->regs+MQNIC_RB_BPI_FLASH_REG_DATA);
-//--ali卡不是 BPI FLASH --
-//--ali卡不是 BPI FLASH --        if (!pri_flash)
-//--ali卡不是 BPI FLASH --        {
-//--ali卡不是 BPI FLASH --            fprintf(stderr, "Failed to connect to flash device\n");
-//--ali卡不是 BPI FLASH --            ret = -1;
-//--ali卡不是 BPI FLASH --            goto skip_flash;
-//--ali卡不是 BPI FLASH --        }
-//--ali卡不是 BPI FLASH --
-//--ali卡不是 BPI FLASH --        flash_size = pri_flash->size;
-//--ali卡不是 BPI FLASH --    }
-//无需    else
-//无需    {
-//无需        fprintf(stderr, "Failed to detect flash\n");
-//无需        ret = -1;
-//无需        goto skip_flash;
-//无需    }
+//--aliカードは BPI FLASH ではない --    else if ((flash_rb = mqnic_find_reg_block(dev->rb_list, MQNIC_RB_BPI_FLASH_TYPE, 0, 0)))
+//--aliカードは BPI FLASH ではない --    {
+//--aliカードは BPI FLASH ではない --        uint32_t reg_val;
+//--aliカードは BPI FLASH ではない --
+//--aliカードは BPI FLASH ではない --        // BPI flash
+//--aliカードは BPI FLASH ではない --        flash_format = reg_read32(flash_rb->regs, MQNIC_RB_BPI_FLASH_REG_FORMAT);
+//--aliカードは BPI FLASH ではない --
+//--aliカードは BPI FLASH ではない --        printf("Flash type: BPI\n");
+//--aliカードは BPI FLASH ではない --        printf("Flash format: 0x%08x\n", flash_format);
+//--aliカードは BPI FLASH ではない --
+//--aliカードは BPI FLASH ではない --        switch (flash_rb->version) {
+//--aliカードは BPI FLASH ではない --            case 0x00000100:
+//--aliカードは BPI FLASH ではない --                flash_configuration = (flash_format >> 8) & 0xff;
+//--aliカードは BPI FLASH ではない --                flash_default_segment = (flash_configuration > 1 ? 1 : 0);
+//--aliカードは BPI FLASH ではない --                flash_fallback_segment = 0;
+//--aliカードは BPI FLASH ではない --                flash_segment0_length = 0;
+//--aliカードは BPI FLASH ではない --                break;
+//--aliカードは BPI FLASH ではない --            case MQNIC_RB_BPI_FLASH_VER:
+//--aliカードは BPI FLASH ではない --                flash_configuration = flash_format & 0xf;
+//--aliカードは BPI FLASH ではない --                flash_default_segment = (flash_format >> 4) & 0xf;
+//--aliカードは BPI FLASH ではない --                flash_fallback_segment = (flash_format >> 8) & 0xf;
+//--aliカードは BPI FLASH ではない --                flash_segment0_length = flash_format & 0xfffff000;
+//--aliカードは BPI FLASH ではない --                break;
+//--aliカードは BPI FLASH ではない --            default:
+//--aliカードは BPI FLASH ではない --                fprintf(stderr, "Unknown BPI flash block version\n");
+//--aliカードは BPI FLASH ではない --                ret = -1;
+//--aliカードは BPI FLASH ではない --                goto skip_flash;
+//--aliカードは BPI FLASH ではない --        }
+//--aliカードは BPI FLASH ではない --
+//--aliカードは BPI FLASH ではない --        // determine data width
+//--aliカードは BPI FLASH ではない --        reg_write32(flash_rb->regs, MQNIC_RB_BPI_FLASH_REG_CTRL, 0x0001010f);
+//--aliカードは BPI FLASH ではない --        reg_write32(flash_rb->regs, MQNIC_RB_BPI_FLASH_REG_DATA, 0xffffffff);
+//--aliカードは BPI FLASH ではない --        reg_val = reg_read32(flash_rb->regs, MQNIC_RB_BPI_FLASH_REG_DATA);
+//--aliカードは BPI FLASH ではない --        reg_write32(flash_rb->regs, MQNIC_RB_BPI_FLASH_REG_CTRL, 0x0000000f);
+//--aliカードは BPI FLASH ではない --        reg_write32(flash_rb->regs, MQNIC_RB_BPI_FLASH_REG_DATA, 0x00000000);
+//--aliカードは BPI FLASH ではない --
+//--aliカードは BPI FLASH ではない --        flash_data_width = 0;
+//--aliカードは BPI FLASH ではない --        while (reg_val)
+//--aliカードは BPI FLASH ではない --        {
+//--aliカードは BPI FLASH ではない --            reg_val >>= 1;
+//--aliカードは BPI FLASH ではない --            flash_data_width++;
+//--aliカードは BPI FLASH ではない --        }
+//--aliカードは BPI FLASH ではない --
+//--aliカードは BPI FLASH ではない --        printf("Data width: %d\n", flash_data_width);
+//--aliカードは BPI FLASH ではない --
+//--aliカードは BPI FLASH ではない --        bitswap = 1;
+//--aliカードは BPI FLASH ではない --
+//--aliカードは BPI FLASH ではない --        if (flash_data_width == 16)
+//--aliカードは BPI FLASH ではない --        {
+//--aliカードは BPI FLASH ではない --            word_size = 16;
+//--aliカードは BPI FLASH ではない --        }
+//--aliカードは BPI FLASH ではない --
+//--aliカードは BPI FLASH ではない --        pri_flash = flash_open_bpi(flash_data_width,
+//--aliカードは BPI FLASH ではない --            flash_rb->regs+MQNIC_RB_BPI_FLASH_REG_CTRL,
+//--aliカードは BPI FLASH ではない --            flash_rb->regs+MQNIC_RB_BPI_FLASH_REG_ADDR,
+//--aliカードは BPI FLASH ではない --            flash_rb->regs+MQNIC_RB_BPI_FLASH_REG_DATA);
+//--aliカードは BPI FLASH ではない --
+//--aliカードは BPI FLASH ではない --        if (!pri_flash)
+//--aliカードは BPI FLASH ではない --        {
+//--aliカードは BPI FLASH ではない --            fprintf(stderr, "Failed to connect to flash device\n");
+//--aliカードは BPI FLASH ではない --            ret = -1;
+//--aliカードは BPI FLASH ではない --            goto skip_flash;
+//--aliカードは BPI FLASH ではない --        }
+//--aliカードは BPI FLASH ではない --
+//--aliカードは BPI FLASH ではない --        flash_size = pri_flash->size;
+//--aliカードは BPI FLASH ではない --    }
+//不要    else
+//不要    {
+//不要        fprintf(stderr, "Failed to detect flash\n");
+//不要        ret = -1;
+//不要        goto skip_flash;
+//不要    }
 
     switch (flash_configuration)
     {
@@ -1282,14 +1282,14 @@ int main(int argc, char *argv[])
                 goto err;
             }
 
-            //--验证个屁哦，相信上帝吧--printf("Writing and verifying flash...\n");
-            //--验证个屁哦，相信上帝吧--if (flash_write_verify_progress(pri_flash, segment_offset, len, segment))
-            //--验证个屁哦，相信上帝吧--{
-            //--验证个屁哦，相信上帝吧--    fprintf(stderr, "Write/verify failed!\n");
-            //--验证个屁哦，相信上帝吧--    ret = -1;
-            //--验证个屁哦，相信上帝吧--    free(segment);
-            //--验证个屁哦，相信上帝吧--    goto err;
-            //--验证个屁哦，相信上帝吧--}
+            //--検証なんてやってられるか、神を信じよう--printf("Writing and verifying flash...\n");
+            //--検証なんてやってられるか、神を信じよう--if (flash_write_verify_progress(pri_flash, segment_offset, len, segment))
+            //--検証なんてやってられるか、神を信じよう--{
+            //--検証なんてやってられるか、神を信じよう--    fprintf(stderr, "Write/verify failed!\n");
+            //--検証なんてやってられるか、神を信じよう--    ret = -1;
+            //--検証なんてやってられるか、神を信じよう--    free(segment);
+            //--検証なんてやってられるか、神を信じよう--    goto err;
+            //--検証なんてやってられるか、神を信じよう--}
             printf("Writing flash...\n");
             if (flash_write_progress(pri_flash, segment_offset, len, segment))
             {
