@@ -5,21 +5,21 @@ PCI Express® はプラグアンドプレイのプロトコルです。つまり
 
 「Tandem Configuration」（タンデムコンフィギュレーション）は 2 段階の方式を用いて、IP が PCI Express 仕様に記載されたコンフィギュレーション時間要件を満たせるようにします。この技術は以下のような複数のユースケースをサポートします:
 
-* 「Tandem PROM」（タンデム PROM）: フラッシュから 2 段階の単一ビットストリームをロードする。
-* 「Tandem PCIe」（タンデム PCIe）: フラッシュから第 1 段階のビットストリームをロードし、第 2 段階のビットストリームは PCIe リンク経由で MCAP に渡す。
+* 「Tandem PROM」（タンデム PROM）: フラッシュから 2 段階の単一ビットストリームをロードします。
+* 「Tandem PCIe」（タンデム PCIe）: フラッシュから第 1 段階のビットストリームをロードし、第 2 段階のビットストリームは PCIe リンク経由で MCAP に渡します。
 * 「Tandem PCIe with Field Updates」（フィールドアップデート対応タンデム PCIe）: タンデム PCIe の初期コンフィギュレーション完了後、PCIe リンクを
-維持したままユーザーデザイン全体を更新する。更新領域（フロアプラン）とデザイン構造はあらかじめ定義されており、Tcl スクリプトも提供されている。
+維持したままユーザーデザイン全体を更新します。更新領域（フロアプラン）とデザイン構造はあらかじめ定義されており、Tcl スクリプトも提供されています。
 
 * タンデム Dynamic Function eXchange: 比較的よく使われるユースケースで、任意のサイズ・任意の数の動的領域に対し、タンデムコンフィギュレーションの後に
-Dynamic Function eXchange (DFX) を行う。
-* 「DFX over PCIe」（PCIe ベースの DFX）: 標準コンフィギュレーションの後に DFX を行い、部分ビットストリームの転送に PCIe / MCAP を使用する。
+Dynamic Function eXchange (DFX) を行います。
+* 「DFX over PCIe」（PCIe ベースの DFX）: 標準コンフィギュレーションの後に DFX を行い、部分ビットストリームの転送に PCIe / MCAP を使用します。
 
 ユースケースに応じて「Tandem Configuration or Dynamic Function eXchange」（タンデムコンフィギュレーションまたは Dynamic Function
 eXchange）オプションを変更します:
-* 「Tandem PROM」はタンデム PROM のユースケースに使用する。
-* 「Tandem PCIe」はタンデム PCIe、またはタンデムと Dynamic Function eXchange を組み合わせるユースケースに使用する。
-* 「Tandem PCIe with Field Updates」は、あらかじめ定義された「Field Updates」ユースケース専用である。
-* 「DFX over PCIe」は、「Tandem Configuration」を有効にせずに DFX 用の MCAP リンクを有効にするために使用する。
+* 「Tandem PROM」はタンデム PROM のユースケースに使用します。
+* 「Tandem PCIe」はタンデム PCIe、またはタンデムと Dynamic Function eXchange を組み合わせるユースケースに使用します。
+* 「Tandem PCIe with Field Updates」は、あらかじめ定義された「Field Updates」ユースケース専用です。
+* 「DFX over PCIe」は、「Tandem Configuration」を有効にせずに DFX 用の MCAP リンクを有効にするために使用します。
 
 
 ## 1 原理
@@ -32,9 +32,9 @@ Tandem PCIe は従来の単一ビットストリームを 2 つの部分に分�
 ![](./images/tandem_pcie.png)
 
 
-FPGA サービスとしては、出荷時に Stage 1 の内容を設定済みにして、そのロジックを dcp ファイルとして固定化しておきます。二次開発のユーザーは pcie モジュールを呼び出し、mcap プログラムでダウンロードするだけで済みます。
+ボード提供側は出荷時に Stage 1 を設定し、そのロジックを dcp ファイルとして固定（ロック）しておきます。ユーザーは同じ PCIe モジュールを使い、mcap で Stage 2 を書き込むだけで済みます。
 
-###1.  ビルド後、tandem1 を固定化する
+### 1. ビルド後、tandem1 を Flash に書き込む
 
 ```shell
 make #ビルド
@@ -57,9 +57,9 @@ vu13p-fw -w xxxxxxxxxx_tandem1.bit
 
 書き込み完了後、PCIe ボードをコールドリブートしてください。
 
-####  tandem2.bit のダウンロード
+#### tandem2.bit の書き込み
 
-本ドキュメントは Ubuntu20 上の linux5.15 環境でのみ検証済みです。まず依存パッケージをインストールします
+本ドキュメントは Ubuntu20 上の linux5.15 環境でのみ検証済みです。まず依存パッケージをインストールします。
 
 ```shell
 # 1. 依存パッケージ

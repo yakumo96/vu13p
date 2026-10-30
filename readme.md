@@ -3,16 +3,16 @@
 
 > 本リポジトリは [maswx/vu13p](https://github.com/maswx/vu13p) をフォークし、コメントとドキュメントを日本語に翻訳したものです。オリジナルの作者およびコントリビューターに感謝します。
 
-* 質問がある場合は [issue](https://github.com/maswx/vu13p/issues) に書き込んで記録してください。
-* サードパーティのリポジトリを参照しています。すべてのリポジトリを取得するには、コマンド ` git clone --recurse-submodules https://github.com/maswx/vu13p.git ` を使用してください。
+* 質問は [issue](https://github.com/yakumo96/vu13p/issues) でお知らせください。
+* サードパーティのリポジトリをサブモジュールとして含んでいるため、次のコマンドで一括取得してください： ` git clone --recurse-submodules https://github.com/yakumo96/vu13p.git `
 
 
-### 使い方
+### プロジェクト一覧
 
 #### [00 pin uart](./prj/00_pin_uart/README.md)
 
-* 自分でしゃべって自己紹介してくれるピン！
-* リバースエンジニアリング。わかる人にはわかる（DDDD）
+* 各ピンが UART で自分のピン名を出力する（ピン配置の特定用）
+* リバースエンジニアリングによるピン配置の調査
 * 検証済み ✔
 
 #### [01_basebd](./prj/01_basebd/readme.md)
@@ -23,7 +23,7 @@
 
 #### [01_basebd_golden](./prj/01_basebd_golden/readme.md)
 
-* ボードの基本 golden イメージ。QSPI に書き込んで固定化できる
+* ボードの基本 golden イメージ。QSPI Flash に書き込んで、電源投入時に自動ロードさせることができる
   * GPIO で LED を駆動
   * BRAM テストプログラム
   * QSPI ドライバ
@@ -31,34 +31,34 @@
 
 #### [01_basebd_multiboot](./prj/01_basebd_mb/readme.md)
 
-* ボードの基本 multiboot イメージ。QSPI の multiboot 領域に書き込んで固定化できる
+* ボードの基本 multiboot イメージ。QSPI Flash の multiboot 領域に書き込んで、電源投入時に自動ロードさせることができる
   * QSPI ドライバのみを含む
 
 
 #### [01 mcap_goldmb](./prj/01_mcap_goldmb/docs/readme.md)
 
-* PCIE 経由で MCAP を使ってファームウェアをダウンロードする方法を紹介
-* QSPI から Tandem PCIE main stage を起動し、PCIE から残りの bit を更新
+* PCIe 経由で MCAP を使ってビットストリームを書き込む方法を紹介
+* QSPI から Tandem PCIe の main stage を起動し、残りの bit を PCIe 経由で更新
   * tcl で複数のコンパイル領域に分割（検証済み ✔）
-  * pcie-mcap で bit をダウンロード（検証済み ✔）
+  * pcie-mcap で bit を書き込み（検証済み ✔）
 
 #### [02 pcie ddr4x4](./prj/02_pcie_ddr4x4/readme.md)
 
 * ボード搭載の DDR4 メモリ 4 系統をテスト
-* PCIE 関連ドライバの紹介
+* PCIe 関連ドライバの紹介
   * 16GB DDR4 の読み書き／速度測定[サンプル](./prj/02_pcie_ddr4x4/driver/ddr4test/src/main.c)（検証済み ✔）
   * シンプルなホスト側割り込みの[example](./prj/02_pcie_ddr4x4/driver/intptest/src/xdma0_events_0_example.c)（検証済み ✔）
 
 #### [03 10G/25G UDP](./prj/03_10g25g_udp/README.md)
 
 * `make` でプロジェクトをビルド！
-* Alex の成果をベースにしています。Alex 最高（YYDS）！
+* Alex の成果をベースにしています。Alex に感謝！
 * UDP 疎通済み！
 * プロジェクト検証済み ✔
 
 #### [04 100G Corundum](./prj/04_100G_corundum/readme.md)
 
-* テイクオフ
+* 100G 通信を確認済み
 * プロジェクト検証済み ✔
 
 #### [05 UDP + Gnuradio]

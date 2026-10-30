@@ -1,6 +1,6 @@
 **注意**
-xdma には Linux カーネルのバージョン要件があり、5.15 を超えてはいけません。`uname -a` コマンドで Linux カーネルのバージョンを確認してください。
-2023年3月の実機テストでは、xdma は Ubuntu 22.04 に対応していませんでした。 
+xdma ドライバには Linux カーネルのバージョン要件があり、5.15 以下である必要があります。`uname -a` コマンドで Linux カーネルのバージョンを確認してください。
+2023年3月の実機テストでは、xdma は Ubuntu 22.04 に対応していませんでした。
 
 
 ## DMA ドライバのインストール
@@ -11,7 +11,7 @@ xdma には Linux カーネルのバージョン要件があり、5.15 を超え
 git submodule update --init --recursive
 ```
 
-2. make 
+2. ビルドとインストール
 
 ```bash
 cd ./dma_ip_drivers/XDMA/linux-kernel/xdma
@@ -26,7 +26,7 @@ cd ./dma_ip_drivers/XDMA/linux-kernel/tests
 sudo ./load_driver.sh
 ```
 
-以下のメッセージが表示されれば、ドライバは正常にロードされています
+以下のメッセージが表示されれば、ドライバは正常にロードされています。
 
 ```bash
 ➜  tests git:(master) ✗ sudo ./load_driver.sh
@@ -37,7 +37,7 @@ The Kernel module installed correctly and the xmda devices were recognized.
 DONE
 ```
 
-この状態で `ls /dev/xdma*` を実行すると、ドライバが正常にロードされていることを確認できます
+この状態で `ls /dev/xdma*` を実行すると、ドライバが正常にロードされていることを確認できます。
 
 ```bash
 ➜  tests git:(master) ✗ ll /dev/xdma*
@@ -70,7 +70,7 @@ crw-rw-rw- 1 root root 511,  0 8月   8 23:51 /dev/xdma0_user
 crw-rw-rw- 1 root root 511,  2 8月   8 23:51 /dev/xdma0_xvc
 ```
 
-ただし所有者が root のため、プログラムで PCIE にデータを読み書きするたびに sudo が必要になります。sudo なしでプログラムを実行できるよう、キャラクタデバイスの所有者を自分に変更することを推奨します。
+ただし所有者が root のため、プログラムから PCIe 経由でデータを読み書きするたびに sudo が必要になります。sudo なしでプログラムを実行できるよう、キャラクタデバイスの所有者を自分に変更することを推奨します。
 
 ```bash
 echo $USER
@@ -80,10 +80,10 @@ sudo chown $USER:$GROUP /dev/xdma*
 
 4. 起動時にドライバを自動ロード
 
-xdma.ko ドライバが正しくロードされているか確認します:
+xdma.ko ドライバがインストールされているか確認します：
 
 ```zsh
-ll /usr/lib/modules/$(uname -r)/extra # ロード済みかどうか確認
+ll /usr/lib/modules/$(uname -r)/extra # インストール済みかどうか確認
 vim /etc/modules-load.d/xdma.conf
 ```
 Linux の起動時にドライバを自動ロードするには、以下の手順で `/usr/lib/modules/$(uname -r)/extra/xdma.ko` ドライバを自動ロードするよう設定できます：
@@ -102,7 +102,7 @@ Linux の起動時にドライバを自動ロードするには、以下の手�
 
    これにより、起動時に `xdma.ko` ドライバをロードするようシステムに指示されます。
 
-**ファイルの保存：** ファイルを保存してテキストエディタを閉じます。新たに追加した xdma ドライバを `.dep` ファイルに反映します。
+**ファイルの保存：** ファイルを保存してテキストエディタを閉じます。`depmod` を実行して、新たに追加した xdma ドライバを `modules.dep` に反映します。
 
 ```
 sudo depmod
@@ -118,7 +118,7 @@ sudo depmod
 
 操作は慎重に行い、重要なデータは必ずバックアップし、作業前にシステムとドライバの構成を十分に理解しておいてください。
 
-4. 起動後のデバイスのデフォルト所有者を変更
+5. 起動後のデバイスファイルのデフォルト所有者を変更
 
 ```
 sudo vim /etc/udev/rules.d/99-xilinx_xdma.rules

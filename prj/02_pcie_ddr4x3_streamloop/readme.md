@@ -7,7 +7,7 @@
   * `cd driver/an64761/Linux`
   * `./compile.sh` で mcap ツールを取得
 
-## mcap でプログラムを書き込む
+## mcap で bit ファイルを書き込む
 
 ```
 ➜  Linux git:(main) ✗ lspci | grep Xilinx
@@ -74,7 +74,7 @@ sudo xvc_pcie -s TCP::10200 -d /dev/xdma0_xvc &
 
 * ILA の波形を表示するには probes file を読み込む必要があります。
 
-* 補足 notes: AXI bridge を接続した AXIL アドレスが 0x4_0000 ではなく 0x2_0000 の場合は、ドライバを再ビルド／再インストールし、xdma.ko を再ロードする必要があります。 
+* 補足: AXI bridge を接続した AXIL アドレスが 0x4_0000 ではなく 0x2_0000 の場合は、ドライバを再ビルド／再インストールし、xdma.ko を再ロードする必要があります。 
 
 ```shell
 cd dma_ip_drivers/XDMA/linux-kernel/xdma/

@@ -14,7 +14,7 @@ set_output_delay 0 [get_ports {qsfp_led_y[*]}]
 
 
  
-# PCIE エッジコネクタ（金手指）から遠い側の up チャネルは BANK 233 を選択、対応位置 X1Y52~Y55
+# PCIe エッジコネクタ（金手指）から遠い側の up チャネルは BANK 233 を選択、対応位置 X1Y52~Y55
 #
 # ug575 P345 を参照 :  BANK 233 は主に (A/C/D/E)(1~11) に配置
 set_property  PACKAGE_PIN E9          [get_ports {up_qsfp_txp[0]}       ]  ; # 8 芯 MPO を使用する場合は 8 番線に対応  tx_0 ; up_qsfp0_tx_p
@@ -42,7 +42,7 @@ set_property  -dict {LOC BC8   IOSTANDARD  LVCMOS12             }     [get_ports
 set_property  -dict {LOC BA7   IOSTANDARD  LVCMOS12 PULLUP true }     [get_ports {up_qsfp_resetl}   ] ; # output ,信号を Low にするとモジュール全体のリセットを開始する。デフォルトでは内部で VCC にプルアップされている
 set_property  -dict {LOC BB9   IOSTANDARD  LVCMOS12 PULLUP true }     [get_ports {up_qsfp_lpmode}   ] ; # output ,低消費電力モード。デフォルトでは内部で VCC にプルアップされている
  
-# PCIE エッジコネクタ（金手指）に近い側の dn チャネルは BANK 229 を選択、対応位置 X1Y36~Y39
+# PCIe エッジコネクタ（金手指）に近い側の dn チャネルは BANK 229 を選択、対応位置 X1Y36~Y39
 #
 # ug575 P345 を参照 :  BANK 229 は主に (V/W/Y/AA)(1~11) に配置
 set_property  PACKAGE_PIN AA9         [get_ports {dn_qsfp_txp[0]}        ] ; # 8 芯 MPO を使用する場合は 8 番線に対応  tx_0
